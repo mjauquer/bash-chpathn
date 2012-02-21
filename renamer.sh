@@ -1,40 +1,52 @@
 #!/bin/bash
-# file: $HOME/bin/correct_pathname.sh
+#
+# File: renamer.sh
+# Author: Marcelo Auquer
+#
+# ======================================================================
 
-# This script renames pathnames if they include weird symbols.
-
-rename_match () {
-	local tempfile
-	tempfile=$HOME/tmp/correct_pathname.sh.tmp
-	mv -v $f $file &> $tempfile
-	sed -i s/^/\[$(date)\]\ \ / $tempfile
-	cat $tempfile | tee | tee -a $HOME/log/correct_pathname.sh.log			# Script's actions are saved to this log file.
-	rm $tempfile
-	return
+find_all () {
+	find "$operand" $find_opts -print0 |
+	while IFS="" read -r -d "" file; do
+		new_name="$file"
+		slashes="${file//[^\/]}"
+		depth=${#slashes}	
+		pattern_separator="[^/]*/"
+		while [ $depth -ne 0 ]; do
+			pattern="$pattern$pattern_separator"
+			depth=$(($depth-1))
+		done
+		trim
+		rm_ctrl
+		echo $new_name
+		pattern=
+	done
 }
 
-process () {
-	file=$(echo $f | tr \!\"\#\$\%\&\'\(\)\*\+\<\>\=\?¿@\[\]\^\`\{\|\}\~ '-' | tr ,\;\: '.' | tr [:blank:] '_' | sed 's=/-=/_=')
-	if [ -e $f ]; then
-		if [ ! -e $file ]; then
-			rename_match
-		else
-			if [ $f != $file ]; then
-				error=$(echo \[$(date)\]\ \ "ERROR: failed to rename" ${f} \($file already exist.\))
-				echo $error | tee -a $HOME/log/correct_pathname.sh.log >&2
-			fi
-		fi
-	fi
-	return
+rm_ctrl () {
+	local suffix="${new_name#$pattern}"
+	local new_suffix="${suffix//[[:cntrl:]]}"
+	new_name="$(echo $new_name |
+	sed "s;\($pattern\).*;\1;")"
+	new_name="$new_name$new_suffix"
 }
 
-[ -d $1 ] && directory=$1
-IFS=$'\n'
-[[ -d $HOME/tmp ]] || mkdir $HOME/tmp ; [[ -d $HOME/log ]] || mkdir $HOME/log
-for f in $(find $directory -type d); do
-	process
+trim () {
+	new_name="$(echo $new_name |
+	sed "s;\($pattern\)\([-[:space:]]*\)\(.*\);\1\3;")"
+	shopt -s extglob
+	new_name="${new_name%%+([[:space:]])}"
+}
+
+new_name=
+find_opts="-maxdepth 1"
+while getopts 'r' option; do
+	case "$option" in
+		r) find_opts="$(echo "$find_opts" |
+		   sed 's/-maxdepth 1/-depth/')"
+		   ;;
+	esac
 done
-for f in $(find $directory -type f); do
-	process
-done
-unset IFS
+shift $(($OPTIND-1))
+operand="$1"
+find_all
