@@ -5,7 +5,7 @@
 #
 #        USAGE: renamer.sh [OPTIONS] OPERAND_DIR
 #
-#  DESCRIPTION:
+#  DESCRIPTION: Change filenames in the operand directory.
 #
 #      OPTIONS:
 # REQUIREMENTS:
@@ -16,50 +16,6 @@
 #     REVISION:
 #
 #======================================================================= 
-
-#===  FUNCTION =========================================================
-#        NAME:
-# DESCRIPTION:
-#  PARAMETERS:
-#=======================================================================
-
-find_all () {
-	find "$operand" $find_opts -print0 |
-	while IFS="" read -r -d "" file; do
-		new_name="$file"
-		#-------------------------------------------------------
-		#
-		#-------------------------------------------------------
-		local slashes="${file//[^\/]}"
-		local depth=${#slashes}	
-		if [ ${#file} -eq ${#slashes} ]; then
-		       	echo "Error: file $file skipped." 2>&1
-			parent_matcher=
-			continue
-		fi
-		local subdir_matcher="[^/]*/"
-		while [ $depth -ne 0 ]; do
-			parent_matcher="$parent_matcher$subdir_matcher"
-			depth=$(($depth-1))
-		done
-		eval $basic_opts
-		eval $ext_opts
-		echo $file
-		echo $new_name
-		#-------------------------------------------------------
-		#
-		#-------------------------------------------------------
-		if [ "$file" == "$new_name" ]; then
-			parent_matcher=
-			continue
-		elif [ -e "$new_name" ]; then
-			echo "Error: file $new_name already exists." 2>&1
-		else
-			mv "$file" "$new_name"
-		fi
-		parent_matcher=
-	done
-}
 
 #===  FUNCTION =========================================================
 #        NAME:
@@ -127,14 +83,14 @@ trim () {
 }
 
 #-----------------------------------------------------------------------
-#
+# BEGINING OF MAIN CODE
 #-----------------------------------------------------------------------
 new_name=
 find_opts="-maxdepth 1"
 basic_opts="trim; rm_cntrl;"
 ext_opts=""
 #-----------------------------------------------------------------------
-#
+# Handle command line options.
 #-----------------------------------------------------------------------
 while getopts 'bdprs' option; do
 	case "$option" in
@@ -153,4 +109,39 @@ while getopts 'bdprs' option; do
 done
 shift $(($OPTIND-1))
 operand="$1"
-find_all
+find "$operand" $find_opts -print0 |
+while IFS="" read -r -d "" file; do
+	new_name="$file"
+	#--------------------------------------------------------------
+	# Build the parent directory matching pattern for the 
+	# current file. Call filename editing functions.
+	#--------------------------------------------------------------
+	slashes="${file//[^\/]}"
+	depth=${#slashes}	
+	if [ ${#file} -eq ${#slashes} ]; then
+		echo "Error: file $file skipped." 2>&1
+		parent_matcher=
+		continue
+	fi
+	subdir_matcher="[^/]*/"
+	while [ $depth -ne 0 ]; do
+		parent_matcher="$parent_matcher$subdir_matcher"
+		depth=$(($depth-1))
+	done
+	eval $basic_opts
+	eval $ext_opts
+	echo $file
+	echo $new_name
+	#--------------------------------------------------------------
+	# Rename file. Handle name conflicts.
+	#--------------------------------------------------------------
+	if [ "$file" == "$new_name" ]; then
+		parent_matcher=
+		continue
+	elif [ -e "$new_name" ]; then
+		echo "Error: file $new_name already exists." 2>&1
+	else
+		mv "$file" "$new_name"
+	fi
+	parent_matcher=
+done
