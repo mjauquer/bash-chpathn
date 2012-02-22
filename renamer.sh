@@ -1,50 +1,154 @@
 #!/bin/bash
+#=======================================================================
 #
-# File: renamer.sh
-# Author: Marcelo Auquer
+#         FILE: renamer.sh
 #
-# ======================================================================
+#        USAGE: renamer.sh [OPTIONS] OPERAND_DIR
+#
+#  DESCRIPTION:
+#
+#      OPTIONS:
+# REQUIREMENTS:
+#         BUGS:
+#        NOTES:
+#       AUTHOR: Marcelo Auquer, auquer@gmail.com
+#      CREATED:
+#     REVISION:
+#
+#======================================================================= 
+
+#===  FUNCTION =========================================================
+#        NAME:
+# DESCRIPTION:
+#  PARAMETERS:
+#=======================================================================
 
 find_all () {
 	find "$operand" $find_opts -print0 |
 	while IFS="" read -r -d "" file; do
 		new_name="$file"
-		slashes="${file//[^\/]}"
-		depth=${#slashes}	
-		pattern_separator="[^/]*/"
+		#-------------------------------------------------------
+		#
+		#-------------------------------------------------------
+		local slashes="${file//[^\/]}"
+		local depth=${#slashes}	
+		if [ ${#file} -eq ${#slashes} ]; then
+		       	echo "Error: file $file skipped." 2>&1
+			parent_matcher=
+			continue
+		fi
+		local subdir_matcher="[^/]*/"
 		while [ $depth -ne 0 ]; do
-			pattern="$pattern$pattern_separator"
+			parent_matcher="$parent_matcher$subdir_matcher"
 			depth=$(($depth-1))
 		done
-		trim
-		rm_ctrl
+		eval $basic_opts
+		eval $ext_opts
+		echo $file
 		echo $new_name
-		pattern=
+		#-------------------------------------------------------
+		#
+		#-------------------------------------------------------
+		if [ "$file" == "$new_name" ]; then
+			parent_matcher=
+			continue
+		elif [ -e "$new_name" ]; then
+			echo "Error: file $new_name already exists." 2>&1
+		else
+			mv "$file" "$new_name"
+		fi
+		parent_matcher=
 	done
 }
 
-rm_ctrl () {
-	local suffix="${new_name#$pattern}"
-	local new_suffix="${suffix//[[:cntrl:]]}"
-	new_name="$(echo $new_name |
-	sed "s;\($pattern\).*;\1;")"
-	new_name="$new_name$new_suffix"
+#===  FUNCTION =========================================================
+#        NAME:
+# DESCRIPTION:
+#  PARAMETERS:
+#=======================================================================
+rm_punct () {
+	local prefix="$(echo $new_name |
+	sed "s;\($parent_matcher\).*;\1;")"
+	local suffix="${new_name#$parent_matcher}"
+	local new_suffix="${suffix//[^[:word:].]/-}"
+	new_name="$prefix$new_suffix"
 }
 
+#===  FUNCTION =========================================================
+#        NAME:
+# DESCRIPTION:
+#  PARAMETERS:
+#=======================================================================
+tr_blank () {
+	local prefix="$(echo $new_name |
+	sed "s;\($parent_matcher\).*;\1;")"
+	local suffix="${new_name#$parent_matcher}"
+	local new_suffix="${suffix//[[:blank:]]/_}"
+	new_name="$prefix$new_suffix"
+}
+
+#===  FUNCTION =========================================================
+#        NAME:
+# DESCRIPTION:
+#  PARAMETERS:
+#=======================================================================
+rm_cntrl () {
+	local prefix="$(echo $new_name |
+	sed "s;\($parent_matcher\).*;\1;")"
+	local suffix="${new_name#$parent_matcher}"
+	local new_suffix="${suffix//[[:cntrl:]]}"
+	new_name="$prefix$new_suffix"
+}
+
+#===  FUNCTION =========================================================
+#        NAME:
+# DESCRIPTION:
+#  PARAMETERS:
+#=======================================================================
+rm_seq () {
+	local prefix="$(echo $new_name |
+	sed "s;\($parent_matcher\).*;\1;")"
+	local suffix="${new_name#$parent_matcher}"
+	local new_suffix="$(echo $suffix | tr -s [-_])"
+	new_name="$prefix$new_suffix"
+	trim
+}
+
+#===  FUNCTION =========================================================
+#        NAME:
+# DESCRIPTION:
+#  PARAMETERS:
+#=======================================================================
 trim () {
 	new_name="$(echo $new_name |
-	sed "s;\($pattern\)\([-[:space:]]*\)\(.*\);\1\3;")"
+	sed "s;\($parent_matcher\)\([-[:space:]]*\)\(.*\);\1\3;")"
 	shopt -s extglob
 	new_name="${new_name%%+([[:space:]])}"
 }
 
+#-----------------------------------------------------------------------
+#
+#-----------------------------------------------------------------------
 new_name=
 find_opts="-maxdepth 1"
-while getopts 'r' option; do
+basic_opts="trim; rm_cntrl;"
+ext_opts=""
+#-----------------------------------------------------------------------
+#
+#-----------------------------------------------------------------------
+while getopts 'bdprs' option; do
 	case "$option" in
+		b) ext_opts="$ext_opts tr_blank;"
+		   ;;
+		d) ext_opts="tr_blank; rm_punct; rm_seq;"
+		   find_opts="-depth"
+		   ;;
+		p) ext_opts="$ext_opts rm_punct;"
+		   ;;
 		r) find_opts="$(echo "$find_opts" |
 		   sed 's/-maxdepth 1/-depth/')"
 		   ;;
+		s) ext_opts="$ext_opts rm_seq;"
 	esac
 done
 shift $(($OPTIND-1))
