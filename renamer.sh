@@ -22,7 +22,7 @@
 # DESCRIPTION:
 #  PARAMETERS:
 #=======================================================================
-rm_punct () {
+portable () {
 	local suffix="${new_name#$parent_matcher}"
 	local prefix="${new_name%$suffix}"
 	suffix="${suffix//[^[:word:].]/-}"
@@ -87,35 +87,47 @@ trim () {
 OLD_LC_ALL=$LC_ALL
 LC_ALL=C
 shopt -s extglob
-find_opts="-maxdepth 1"
-basic_opts="trim; rm_cntrl;"
-ext_opts=""
+recursive=false
 #-----------------------------------------------------------------------
 # Parse command line options.
 #-----------------------------------------------------------------------
-while getopts 'bdprs' option; do
+optindex=0
+while getopts 'bcprst' option; do
 	case "$option" in
-		b) ext_opts="$ext_opts tr_blank;"
+		b) editopts[$optindex]=b
 		   ;;
-		d) ext_opts="tr_blank; rm_punct; rm_seq;"
-		   find_opts="-depth"
+		c) editopts[$optindex]=c
 		   ;;
-		p) ext_opts="$ext_opts rm_punct;"
+		p) editopts[$optindex]=p
 		   ;;
-		r) find_opts="$(echo "$find_opts" |
-		   sed 's/-maxdepth 1/-depth/')"
+		r) recursive=true
 		   ;;
-		s) ext_opts="$ext_opts rm_seq;"
+		s) editopts[$optindex]=s
+		   ;;
+		t) editopts[$optindex]=t
+		   ;;
 	esac
+	optindex=$((${optindex}+1))
 done
+#-----------------------------------------------------------------------
+# Build the find command.
+#-----------------------------------------------------------------------
 shift $(($OPTIND-1))
-operand="$1"
-find "$operand" $find_opts -print0 |
+if [ $recursive == "true" ]; then
+	find_opts="-depth"
+else
+	find_opts="-maxdepth 1"
+fi
+root_dir="$1"
+find "$root_dir" $find_opts -print0 |
+#-----------------------------------------------------------------------
+# Execute edit actions on every founded file and directory.
+#-----------------------------------------------------------------------
 while IFS="" read -r -d "" file; do
 	new_name="$file"
 	#--------------------------------------------------------------
-	# Build the parent directory matching pattern for the 
-	# current file. Call filename editing functions.
+	# Build the pattern which will match the absolute pathname of
+	# the current file's parent directory.
 	#--------------------------------------------------------------
 	slashes="${file//[^\/]}"
 	depth=${#slashes}	
@@ -129,8 +141,26 @@ while IFS="" read -r -d "" file; do
 		parent_matcher="$parent_matcher$subdir_matcher"
 		depth=$(($depth-1))
 	done
-	eval $basic_opts
-	eval $ext_opts
+	#--------------------------------------------------------------
+	# Call editing functions on the current file.
+	#--------------------------------------------------------------
+	for editopt in "${editopts[@]}"; do
+		if [ $editopt == b ]; then
+			tr_blank
+		fi
+		if [ $editopt == c ]; then
+			rm_cntrl
+		fi
+		if [ $editopt == p ]; then
+			portable	
+		fi
+		if [ $editopt == s ]; then
+			rm_seq
+		fi
+		if [ $editopt == t ]; then
+			trim		
+		fi
+	done
 	#--------------------------------------------------------------
 	# Rename file. Handle name conflicts.
 	#--------------------------------------------------------------
