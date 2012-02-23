@@ -23,11 +23,11 @@
 #  PARAMETERS:
 #=======================================================================
 rm_punct () {
-	local prefix="$(echo $new_name |
-	sed "s;\($parent_matcher\).*;\1;")"
 	local suffix="${new_name#$parent_matcher}"
-	local new_suffix="${suffix//[^[:word:].]/-}"
-	new_name="$prefix$new_suffix"
+	local prefix="${new_name%$suffix}"
+	suffix="${suffix//[^[:word:].]/-}"
+	new_name="$prefix$suffix"
+	trim
 }
 
 #===  FUNCTION =========================================================
@@ -36,11 +36,10 @@ rm_punct () {
 #  PARAMETERS:
 #=======================================================================
 tr_blank () {
-	local prefix="$(echo $new_name |
-	sed "s;\($parent_matcher\).*;\1;")"
 	local suffix="${new_name#$parent_matcher}"
-	local new_suffix="${suffix//[[:blank:]]/_}"
-	new_name="$prefix$new_suffix"
+	local prefix="${new_name%$suffix}"
+	suffix="${suffix//[[:blank:]]/_}"
+	new_name="$prefix$suffix"
 }
 
 #===  FUNCTION =========================================================
@@ -49,11 +48,10 @@ tr_blank () {
 #  PARAMETERS:
 #=======================================================================
 rm_cntrl () {
-	local prefix="$(echo $new_name |
-	sed "s;\($parent_matcher\).*;\1;")"
 	local suffix="${new_name#$parent_matcher}"
-	local new_suffix="${suffix//[[:cntrl:]]}"
-	new_name="$prefix$new_suffix"
+	local prefix="${new_name%$suffix}"
+	suffix="${suffix//[[:cntrl:]]}"
+	new_name="$prefix$suffix"
 }
 
 #===  FUNCTION =========================================================
@@ -62,11 +60,11 @@ rm_cntrl () {
 #  PARAMETERS:
 #=======================================================================
 rm_seq () {
-	local prefix="$(echo $new_name |
-	sed "s;\($parent_matcher\).*;\1;")"
 	local suffix="${new_name#$parent_matcher}"
-	local new_suffix="$(echo $suffix | tr -s [-_])"
-	new_name="$prefix$new_suffix"
+	local prefix="${new_name%$suffix}"
+	suffix="${suffix//[[:cntrl:]]}"
+	suffix="$(echo $suffix | tr -s [-_])"
+	new_name="$prefix$suffix"
 	trim
 }
 
@@ -76,15 +74,17 @@ rm_seq () {
 #  PARAMETERS:
 #=======================================================================
 trim () {
-	new_name="$(echo $new_name |
-	sed "s;\($parent_matcher\)\([-[:space:]]*\)\(.*\);\1\3;")"
-	shopt -s extglob
-	new_name="${new_name%%+([[:space:]])}"
+	local suffix="${new_name#$parent_matcher}"
+	local prefix="${new_name%$suffix}"
+	suffix="${suffix##+([-[[:space:]])}"
+	suffix="${suffix%%+([[:space:]])}"
+	new_name="$prefix$suffix"
 }
 
 #-----------------------------------------------------------------------
 # BEGINING OF MAIN CODE
 #-----------------------------------------------------------------------
+shopt -s extglob
 new_name=
 find_opts="-maxdepth 1"
 basic_opts="trim; rm_cntrl;"
@@ -130,8 +130,8 @@ while IFS="" read -r -d "" file; do
 	done
 	eval $basic_opts
 	eval $ext_opts
-	echo $file
-	echo $new_name
+#	echo $file
+#	echo $new_name
 	#--------------------------------------------------------------
 	# Rename file. Handle name conflicts.
 	#--------------------------------------------------------------
