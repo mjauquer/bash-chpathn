@@ -84,13 +84,14 @@ trim () {
 #-----------------------------------------------------------------------
 # BEGINING OF MAIN CODE
 #-----------------------------------------------------------------------
+OLD_LC_ALL=$LC_ALL
+LC_ALL=C
 shopt -s extglob
-new_name=
 find_opts="-maxdepth 1"
 basic_opts="trim; rm_cntrl;"
 ext_opts=""
 #-----------------------------------------------------------------------
-# Handle command line options.
+# Parse command line options.
 #-----------------------------------------------------------------------
 while getopts 'bdprs' option; do
 	case "$option" in
@@ -130,8 +131,6 @@ while IFS="" read -r -d "" file; do
 	done
 	eval $basic_opts
 	eval $ext_opts
-#	echo $file
-#	echo $new_name
 	#--------------------------------------------------------------
 	# Rename file. Handle name conflicts.
 	#--------------------------------------------------------------
@@ -145,3 +144,4 @@ while IFS="" read -r -d "" file; do
 	fi
 	parent_matcher=
 done
+LC_ALL=$OLDLC_ALL
