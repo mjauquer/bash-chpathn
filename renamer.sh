@@ -18,16 +18,17 @@
 #======================================================================= 
 
 #===  FUNCTION =========================================================
-#        NAME:
-# DESCRIPTION:
+#        NAME: portable
+# DESCRIPTION: 
 #  PARAMETERS:
 #=======================================================================
 portable () {
-	local suffix="${new_name#$parent_matcher}"
-	local prefix="${new_name%$suffix}"
+	local suffix="${1#$2}"
+	local prefix="${1%$suffix}"
 	suffix="${suffix//[^[:word:].]/-}"
 	new_name="$prefix$suffix"
-	trim
+	trim "$new_name" "$2"
+
 }
 
 #===  FUNCTION =========================================================
@@ -35,9 +36,9 @@ portable () {
 # DESCRIPTION:
 #  PARAMETERS:
 #=======================================================================
-tr_blank () {
-	local suffix="${new_name#$parent_matcher}"
-	local prefix="${new_name%$suffix}"
+noblanks () {
+	local suffix="${1#$2}"
+	local prefix="${1%$suffix}"
 	suffix="${suffix//[[:blank:]]/_}"
 	new_name="$prefix$suffix"
 }
@@ -47,9 +48,9 @@ tr_blank () {
 # DESCRIPTION:
 #  PARAMETERS:
 #=======================================================================
-rm_cntrl () {
-	local suffix="${new_name#$parent_matcher}"
-	local prefix="${new_name%$suffix}"
+nocntrl () {
+	local suffix="${1#$2}"
+	local prefix="${1%$suffix}"
 	suffix="${suffix//[[:cntrl:]]}"
 	new_name="$prefix$suffix"
 }
@@ -59,13 +60,14 @@ rm_cntrl () {
 # DESCRIPTION:
 #  PARAMETERS:
 #=======================================================================
-rm_seq () {
-	local suffix="${new_name#$parent_matcher}"
-	local prefix="${new_name%$suffix}"
+norep () {
+	local suffix="${1#$2}"
+	local prefix="${1%$suffix}"
 	suffix="${suffix//[[:cntrl:]]}"
 	suffix="$(echo $suffix | tr -s [-_])"
 	new_name="$prefix$suffix"
-	trim
+	trim "$new_name" "$2"
+
 }
 
 #===  FUNCTION =========================================================
@@ -74,8 +76,8 @@ rm_seq () {
 #  PARAMETERS:
 #=======================================================================
 trim () {
-	local suffix="${new_name#$parent_matcher}"
-	local prefix="${new_name%$suffix}"
+	local suffix="${1#$2}"
+	local prefix="${1%$suffix}"
 	suffix="${suffix##+([-[[:space:]])}"
 	suffix="${suffix%%+([[:space:]])}"
 	new_name="$prefix$suffix"
@@ -146,19 +148,19 @@ while IFS="" read -r -d "" file; do
 	#--------------------------------------------------------------
 	for editopt in "${editopts[@]}"; do
 		if [ $editopt == b ]; then
-			tr_blank
+			noblanks "$new_name" "$parent_matcher"
 		fi
 		if [ $editopt == c ]; then
-			rm_cntrl
+			nocntrl "$new_name" "$parent_matcher"
 		fi
 		if [ $editopt == p ]; then
-			portable	
+			portable "$new_name" "$parent_matcher"
 		fi
 		if [ $editopt == s ]; then
-			rm_seq
+			norep "$new_name" "$parent_matcher"
 		fi
 		if [ $editopt == t ]; then
-			trim		
+			trim "$new_name" "$parent_matcher"
 		fi
 	done
 	#--------------------------------------------------------------
