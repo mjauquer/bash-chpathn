@@ -1,4 +1,4 @@
-#!/bin/bash
+# "new_name" "new_name"!/bin/bash
 #=======================================================================
 #
 #         FILE: renamer.sh
@@ -20,14 +20,14 @@
 #===  FUNCTION =========================================================
 #        NAME: portable
 # DESCRIPTION: 
-#  PARAMETERS:
+#  PARAMETERS: STRING1 STRING2
 #=======================================================================
 portable () {
 	local suffix="${1#$2}"
 	local prefix="${1%$suffix}"
 	suffix="${suffix//[^[:word:].]/-}"
-	new_name="$prefix$suffix"
-	trim "$new_name" "$2"
+	local $3 && upvar $3 "$prefix$suffix"
+	trim "$new_name" "$2" "new_name"
 
 }
 
@@ -40,7 +40,7 @@ noblanks () {
 	local suffix="${1#$2}"
 	local prefix="${1%$suffix}"
 	suffix="${suffix//[[:blank:]]/_}"
-	new_name="$prefix$suffix"
+	local $3 && upvar $3 "$prefix$suffix"
 }
 
 #===  FUNCTION =========================================================
@@ -52,7 +52,7 @@ nocntrl () {
 	local suffix="${1#$2}"
 	local prefix="${1%$suffix}"
 	suffix="${suffix//[[:cntrl:]]}"
-	new_name="$prefix$suffix"
+	local $3 && upvar $3 "$prefix$suffix"
 }
 
 #===  FUNCTION =========================================================
@@ -65,8 +65,8 @@ norep () {
 	local prefix="${1%$suffix}"
 	suffix="${suffix//[[:cntrl:]]}"
 	suffix="$(echo $suffix | tr -s [-_])"
-	new_name="$prefix$suffix"
-	trim "$new_name" "$2"
+	local $3 && upvar $3 "$prefix$suffix"
+	trim "$new_name" "$2" "new_name"
 
 }
 
@@ -80,12 +80,13 @@ trim () {
 	local prefix="${1%$suffix}"
 	suffix="${suffix##+([-[[:space:]])}"
 	suffix="${suffix%%+([[:space:]])}"
-	new_name="$prefix$suffix"
+	local $3 && upvar $3 "$prefix$suffix"
 }
 
 #-----------------------------------------------------------------------
 # BEGINING OF MAIN CODE
 #-----------------------------------------------------------------------
+source ~/bin/upvars
 OLD_LC_ALL=$LC_ALL
 LC_ALL=C
 shopt -s extglob
@@ -148,19 +149,24 @@ while IFS="" read -r -d "" file; do
 	#--------------------------------------------------------------
 	for editopt in "${editopts[@]}"; do
 		if [ $editopt == b ]; then
-			noblanks "$new_name" "$parent_matcher"
+			noblanks "$new_name" "$parent_matcher" \
+				"new_name"
 		fi
 		if [ $editopt == c ]; then
-			nocntrl "$new_name" "$parent_matcher"
+			nocntrl "$new_name" "$parent_matcher" \
+				"new_name"
 		fi
 		if [ $editopt == p ]; then
-			portable "$new_name" "$parent_matcher"
+			portable "$new_name" "$parent_matcher" \
+				"new_name"
 		fi
 		if [ $editopt == s ]; then
-			norep "$new_name" "$parent_matcher"
+			norep "$new_name" "$parent_matcher" \
+				"new_name"
 		fi
 		if [ $editopt == t ]; then
-			trim "$new_name" "$parent_matcher"
+			trim "$new_name" "$parent_matcher" \
+				"new_name"
 		fi
 	done
 	#--------------------------------------------------------------
