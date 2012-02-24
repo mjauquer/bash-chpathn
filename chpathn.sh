@@ -28,7 +28,6 @@ portable () {
 	suffix="${suffix//[^[:word:].]/-}"
 	local $3 && upvar $3 "$prefix$suffix"
 	trim "$new_name" "$2" "new_name"
-
 }
 
 #===  FUNCTION =========================================================
