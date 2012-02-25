@@ -1,9 +1,9 @@
 #"!/bin/bash
 #=======================================================================
 #
-#         FILE: renamer.sh
+#         FILE: chpathn.sh
 #
-#        USAGE: renamer.sh [OPTIONS] OPERAND_DIR
+#        USAGE: chpathn.sh [OPTIONS] OPERAND_DIR
 #
 #  DESCRIPTION: Change filenames in the operand directory.
 #
@@ -18,9 +18,72 @@
 #======================================================================= 
 
 #===  FUNCTION =========================================================
+#
 #        NAME: portable
-# DESCRIPTION: 
-#  PARAMETERS: STRING1 STRING2
+#
+#       USAGE: portable PATHNAME PATTERN VARNAME
+#
+# DESCRIPTION: Use the expanded value of PATTERN (the parent_matcher) to
+#              match a beggining substring (a prefix) of the expanded
+#              value of PATHNAME (pathname) to be preserved of further
+#              editing of this function. Replace in the trailing
+#              substring not matched by the parent_matcher (the suffix)
+#              every character of a non-ascii vowel with his matching
+#              ascii vowel character. Store the resulting string in the
+#              caller's variable VARNAME.
+#
+#  PARAMETERS: PATHNAME (A string).
+#              PATTERN  (A word subject of tilde expansion, parameter
+#                        expansion, command substitution and arithmetic
+#                        substitution). 
+#              VARNAME  (A variable name).
+#=======================================================================
+asciivowels () {
+	local suffix="${1#$2}"
+	local prefix="${1%$suffix}"
+	suffix=${suffix//â/a}
+	suffix=${suffix//à/a}
+	suffix=${suffix//á/a}
+	suffix=${suffix//ä/a}
+	suffix=${suffix//ê/e}
+	suffix=${suffix//è/e}
+	suffix=${suffix//é/e}
+	suffix=${suffix//ë/e}
+	suffix=${suffix//î/i}
+	suffix=${suffix//ì/i}
+	suffix=${suffix//í/i}
+	suffix=${suffix//ï/i}
+	suffix=${suffix//ô/o}
+	suffix=${suffix//ò/o}
+	suffix=${suffix//ó/o}
+	suffix=${suffix//ö/o}
+	suffix=${suffix//û/u}
+	suffix=${suffix//ù/u}
+	suffix=${suffix//ú/u}
+	suffix=${suffix//ü/u}
+	local $3 && upvar $3 "$prefix$suffix"
+}
+
+#===  FUNCTION =========================================================
+#
+#        NAME: portable
+#
+#       USAGE: portable PATHNAME PATTERN VARNAME
+#
+# DESCRIPTION: Use the expanded value of PATTERN (the parent_matcher) to
+#              match a beggining substring (a prefix) of the expanded
+#              value of PATHNAME (pathname) to be preserved of further
+#              editing of this function. Replace in the trailing
+#              substring not matched by the parent_matcher (the suffix)
+#              every character with a dash, unless it is a dot, an
+#              underscore or an alphanumeric character. Store the
+#              resulting string in the caller's variable VARNAME.
+#
+#  PARAMETERS: PATHNAME (A string).
+#              PATTERN  (A word subject of tilde expansion, parameter
+#                        expansion, command substitution and arithmetic
+#                        substitution). 
+#              VARNAME  (A variable name).
 #=======================================================================
 portable () {
 	local suffix="${1#$2}"
@@ -31,9 +94,24 @@ portable () {
 }
 
 #===  FUNCTION =========================================================
-#        NAME:
-# DESCRIPTION:
-#  PARAMETERS:
+#
+#        NAME: noblanks
+#
+#       USAGE: noblanks PATHNAME PATTERN VARNAME
+#
+# DESCRIPTION: Use the expanded value of PATTERN (the parent_matcher) to
+#              match a beggining substring (a prefix) of the expanded
+#              value of PATHNAME (pathname) to be preserved of further
+#              editing of this function. Replace in the trailing
+#              substring not matched by the parent_matcher (the suffix)
+#              every blank character with an undescore. Store the
+#              resulting string in the caller's variable VARNAME.
+#
+#  PARAMETERS: PATHNAME (A string).
+#              PATTERN  (A word subject of tilde expansion, parameter
+#                        expansion, command substitution and arithmetic
+#                        substitution). 
+#              VARNAME  (A variable name).
 #=======================================================================
 noblanks () {
 	local suffix="${1#$2}"
@@ -43,9 +121,24 @@ noblanks () {
 }
 
 #===  FUNCTION =========================================================
-#        NAME:
-# DESCRIPTION:
-#  PARAMETERS:
+#
+#        NAME: nocntrl
+#
+#       USAGE: nocntrl PATHNAME PATTERN VARNAME
+#
+# DESCRIPTION: Use the expanded value of PATTERN (the parent_matcher) to
+#              match a beggining substring (a prefix) of the expanded
+#              value of PATHNAME (pathname) to be preserved of further
+#              editing of this function. Remove of the trailing
+#              substring not matched by the parent_matcher (the suffix)
+#              every control character. Store the resulting string in
+#              the caller's variable VARNAME.
+#
+#  PARAMETERS: PATHNAME (A string).
+#              PATTERN  (A word subject of tilde expansion, parameter
+#                        expansion, command substitution and arithmetic
+#                        substitution). 
+#              VARNAME  (A variable name).
 #=======================================================================
 nocntrl () {
 	local suffix="${1#$2}"
@@ -55,9 +148,25 @@ nocntrl () {
 }
 
 #===  FUNCTION =========================================================
-#        NAME:
-# DESCRIPTION:
-#  PARAMETERS:
+#
+#        NAME: norep
+#
+#       USAGE: norep PATHNAME PATTERN VARNAME
+#
+# DESCRIPTION: Use the expanded value of PATTERN (the parent_matcher) to
+#              match a beggining substring (a prefix) of the expanded
+#              value of PATHNAME (pathname) to be preserved of further
+#              editing of this function. Remove of the trailing
+#              substring not matched by the parent_matcher (the suffix)
+#              every sequence of dashes (or underscores). Leave only one
+#              character in that place. Store the resulting string in
+#              the caller's variable VARNAME.
+#
+#  PARAMETERS: PATHNAME (A string).
+#              PATTERN  (A word subject of tilde expansion, parameter
+#                        expansion, command substitution and arithmetic
+#                        substitution). 
+#              VARNAME  (A variable name).
 #=======================================================================
 norep () {
 	local suffix="${1#$2}"
@@ -70,9 +179,26 @@ norep () {
 }
 
 #===  FUNCTION =========================================================
-#        NAME:
-# DESCRIPTION:
-#  PARAMETERS:
+#
+#        NAME: trim
+#
+#       USAGE: trim PATHNAME PATTERN VARNAME
+#
+# DESCRIPTION: Use the expanded value of PATTERN (the parent_matcher) to
+#              match a beggining substring (a prefix) of the expanded
+#              value of PATHNAME (pathname) to be preserved of further
+#              editing of this function. Remove of the trailing
+#              substring not matched by the parent_matcher (the suffix)
+#              every sequence of dashes (or underscores). Remove spaces
+#              and dashes at the beggining of the suffix and spaces at
+#              the end of it. Store the resulting string in the caller's
+#              variable VARNAME.
+#
+#  PARAMETERS: PATHNAME (A string).
+#              PATTERN  (A word subject of tilde expansion, parameter
+#                        expansion, command substitution and arithmetic
+#                        substitution). 
+#              VARNAME  (A variable name).
 #=======================================================================
 trim () {
 	local suffix="${1#$2}"
@@ -94,7 +220,7 @@ recursive=false
 # Parse command line options.
 #-----------------------------------------------------------------------
 optindex=0
-while getopts 'bcprst' option; do
+while getopts 'bcprstv' option; do
 	case "$option" in
 		b) editopts[$optindex]=b
 		   ;;
@@ -107,6 +233,8 @@ while getopts 'bcprst' option; do
 		s) editopts[$optindex]=s
 		   ;;
 		t) editopts[$optindex]=t
+		   ;;
+		v) editopts[$optindex]=v
 		   ;;
 	esac
 	optindex=$((${optindex}+1))
@@ -165,6 +293,10 @@ while IFS="" read -r -d "" file; do
 		fi
 		if [ $editopt == t ]; then
 			trim "$new_name" "$parent_matcher" \
+				"new_name"
+		fi
+		if [ $editopt == v ]; then
+			asciivowels "$new_name" "$parent_matcher" \
 				"new_name"
 		fi
 	done
