@@ -310,7 +310,7 @@ trim () {
 #-----------------------------------------------------------------------
 # BEGINING OF MAIN CODE
 #-----------------------------------------------------------------------
-source ~/bin/upvars
+source ~/code/bash/chpathn/upvars.sh
 OLD_LC_ALL=$LC_ALL
 LC_ALL=C
 shopt -s extglob
