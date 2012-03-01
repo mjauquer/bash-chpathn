@@ -3,7 +3,7 @@
 #
 #         FILE: chpathn.sh
 #
-#        USAGE: chpathn.sh [OPTIONS] OPERAND_DIR
+#        USAGE: chpathn.sh [OPTIONS] DIR
 #
 #  DESCRIPTION: Change filenames in the operand directory.
 #
@@ -28,8 +28,8 @@
 #              value of PATHNAME (pathname) to be preserved of further
 #              editing of this function. Replace in the trailing
 #              substring not matched by the parent_matcher (the suffix)
-#              every character of a non-ascii vowel with his matching
-#              ascii vowel character. Store the resulting string in the
+#              every non-ascii vowel character with his matching ascii
+#              vowel character. Store the resulting string in the
 #              caller's variable VARNAME.
 #
 #  PARAMETERS: PATHNAME (A string).
