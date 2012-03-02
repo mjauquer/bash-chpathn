@@ -313,10 +313,10 @@ trim () {
 }
 
 #-----------------------------------------------------------------------
-# BEGINING OF MAIN CODE
+# BEGINNING OF MAIN CODE
 #-----------------------------------------------------------------------
-source ~/code/bash/chpathn/upvars.sh
-source ~/code/bash/chpathn/getopt.sh
+source ~/code/bash/upvars/upvars.sh
+source ~/code/bash/getoptx/getoptx.bash
 OLD_LC_ALL=$LC_ALL
 LC_ALL=C
 shopt -s extglob
