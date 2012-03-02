@@ -13,7 +13,7 @@
 #        NOTES: --
 #       AUTHOR: Marcelo Auquer, auquer@gmail.com
 #      CREATED: 02/19/2012
-#     REVISION: 02/25/2012
+#     REVISION: 03/02/2012
 #
 #======================================================================= 
 
@@ -45,18 +45,23 @@ usage () {
 	
 	Change the name of files and subdirectories in DIR.
 
-	-b replace blank characters with underscores.
-	-c remove control characters.
-	-h display this help.
-	-p equivalent to -ctbvsrt
-	-r replace every sequence of more than one dash (or underscore)
-	   with only one character.
-	-R do all actions recursively.
-	-s replace every character with a dash, unless it is an
-	   alphanumeric character, a dot or an underscore.
-	-t remove leading dashes or blank characters and trailing blank
-	   characters.
-	-v replace non-ascii vowels with ascii ones.
+	--ascii-vowels Replace non-ascii vowels with ascii ones.
+	 -h
+	--help         Display this help.
+	--noblank      Replace blank characters with underscores.
+	--nocontrol    Remove control characters.
+	--norep        Replace every sequence of more than one dash (or 
+	               underscore) with only one character.
+	--only-word    Replace every character with a dash, unless it is 
+	               an alphanumeric character, a dot or an underscore.
+	 -p
+	--portable     Equivalent to --nocontrol --trim --noblank
+	               --ascii-vowels --only-word --norep --trim
+	 -r
+	 -R
+	--recursive    Do all actions recursively.
+	--trim         Remove leading dashes or blank characters and 
+	               trailing blank characters.
 	EOF
 }
 
@@ -109,9 +114,9 @@ asciivowels () {
 
 #===  FUNCTION =========================================================
 #
-#        NAME: noblanks
+#        NAME: noblank
 #
-#       USAGE: noblanks PATHNAME PATTERN VARNAME
+#       USAGE: noblank PATHNAME PATTERN VARNAME
 #
 # DESCRIPTION: Use the expanded value of PATTERN (the parent_matcher) to
 #              match a beggining substring (a prefix) of the expanded
@@ -127,7 +132,7 @@ asciivowels () {
 #                        substitution). 
 #              VARNAME  (A variable name).
 #=======================================================================
-noblanks () {
+noblank () {
 	local suffix="${1#$2}"
 	local prefix="${1%$suffix}"
 	suffix="${suffix//[[:blank:]]/_}"
@@ -136,9 +141,9 @@ noblanks () {
 
 #===  FUNCTION =========================================================
 #
-#        NAME: nospecial
+#        NAME: only-word
 #
-#       USAGE: nospecial PATHNAME PATTERN VARNAME
+#       USAGE: only-word PATHNAME PATTERN VARNAME
 #
 # DESCRIPTION: Use the expanded value of PATTERN (the parent_matcher) to
 #              match a beggining substring (a prefix) of the expanded
@@ -155,7 +160,7 @@ noblanks () {
 #                        substitution). 
 #              VARNAME  (A variable name).
 #=======================================================================
-nospecial () {
+only-word () {
 	local suffix="${1#$2}"
 	local prefix="${1%$suffix}"
 	suffix="${suffix//[^[:word:].]/-}"
@@ -230,9 +235,9 @@ norep () {
 #              {
 #              nocntrl PATHNAME PATTERN VARNAME
 #              trim PATHNAME PATTERN VARNAME
-#              noblanks PATHNAME PATTERN VARNAME
+#              noblank PATHNAME PATTERN VARNAME
 #              asciivowels PATHNAME PATTERN VARNAME
-#              nospecial PATHNAME PATTERN VARNAME
+#              only-word PATHNAME PATTERN VARNAME
 #              norep PATHNAME PATTERN VARNAME
 #              trim PATHNAME PATTERN VARNAME
 #              }
@@ -311,6 +316,7 @@ trim () {
 # BEGINING OF MAIN CODE
 #-----------------------------------------------------------------------
 source ~/code/bash/chpathn/upvars.sh
+source ~/code/bash/chpathn/getopt.sh
 OLD_LC_ALL=$LC_ALL
 LC_ALL=C
 shopt -s extglob
@@ -319,24 +325,35 @@ recursive=false
 # Parse command line options.
 #-----------------------------------------------------------------------
 optindex=0
-while getopts 'bchprRstv' option; do
-	case "$option" in
-		b) editopts[$optindex]=b
-		   ;;
-		c) editopts[$optindex]=c
-		   ;;
-		h) editopts[$optindex]=h
-		   ;;
-		p) editopts[$optindex]=p
-		   ;;
-		R) recursive=true
-		   ;;
-		s) editopts[$optindex]=s
-		   ;;
-		t) editopts[$optindex]=t
-		   ;;
-		v) editopts[$optindex]=v
-		   ;;
+while getoptex "ascii-vowels noblank nocontrol norep h help p portable r
+	recursive R only-word trim" "$@"; do
+	case "$OPTOPT" in
+		ascii-vowels) editopts[$optindex]=ascii-vowels
+		              ;;
+		noblank)     editopts[$optindex]=noblank
+		              ;;
+		nocontrol)    editopts[$optindex]=nocontrol
+		              ;;
+		norep)        editopts[$optindex]=norep
+		              ;;
+		h)            editopts[$optindex]=h
+		              ;;
+		help)         editopts[$optindex]=help
+		              ;;
+		p)            editopts[$optindex]=portable
+		              ;;
+		portable)     editopts[$optindex]=portable
+		              ;;
+		r)            recursive=true
+		              ;;
+		recursive)    recursive=true
+		              ;;
+		R)            recursive=true
+		              ;;
+		only-word)    editopts[$optindex]=s
+		              ;;
+		trim)         editopts[$optindex]=trim
+		              ;;
 	esac
 	optindex=$((${optindex}+1))
 done
@@ -380,35 +397,35 @@ while IFS="" read -r -d "" file; do
 	# Call editing functions on the current file.
 	#--------------------------------------------------------------
 	for editopt in "${editopts[@]}"; do
-		if [ $editopt == b ]; then
-			noblanks "$new_name" "$parent_matcher" \
+		if [ $editopt == ascii-vowels ]; then
+			asciivowels "$new_name" "$parent_matcher" \
 				"new_name"
 		fi
-		if [ $editopt == c ]; then
+		if [ $editopt == noblank ]; then
+			noblank "$new_name" "$parent_matcher" \
+				"new_name"
+		fi
+		if [ $editopt == nocontrol ]; then
 			nocntrl "$new_name" "$parent_matcher" \
 				"new_name"
 		fi
-		if [ $editopt == h ]; then
+		if [ $editopt == only-word ]; then
+			only-word "$new_name" "$parent_matcher" \
+				"new_name"
+		fi
+		if [ $editopt == help ]; then
 			usage
 		fi
-		if [ $editopt == p ]; then
+		if [ $editopt == portable ]; then
 			portable "$new_name" "$parent_matcher" \
 				"new_name"
 		fi
-		if [ $editopt == r ]; then
+		if [ $editopt == norep ]; then
 			norep "$new_name" "$parent_matcher" \
 				"new_name"
 		fi
-		if [ $editopt == s ]; then
-			nospecial "$new_name" "$parent_matcher" \
-				"new_name"
-		fi
-		if [ $editopt == t ]; then
+		if [ $editopt == trim ]; then
 			trim "$new_name" "$parent_matcher" \
-				"new_name"
-		fi
-		if [ $editopt == v ]; then
-			asciivowels "$new_name" "$parent_matcher" \
 				"new_name"
 		fi
 	done
