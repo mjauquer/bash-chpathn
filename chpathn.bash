@@ -1,11 +1,16 @@
-#"!/bin/bash
+#!/bin/bash
+
+source ~/code/bash/upvars/upvars.sh
+source ~/code/bash/getoptx/getoptx.bash
+source ~/code/bash/pathnlib/pathnlib.sh
+
 #=======================================================================
 #
 #         FILE: chpathn.sh
 #
-#        USAGE: chpathn.sh [OPTIONS] DIR
+#        USAGE: chpathn.sh [OPTIONS] PATH...
 #
-#  DESCRIPTION: Change filenames in the operand directory.
+#  DESCRIPTION: Change filenames in the operand directories.
 #
 #      OPTIONS: See function 'usage' below.
 # REQUIREMENTS: upvars.sh
@@ -52,11 +57,11 @@ usage () {
 	--nocontrol    Remove control characters.
 	--norep        Replace every sequence of more than one dash (or 
 	               underscore) with only one character.
-	--only-word    Replace every character with a dash, unless it is 
+	--nospecial    Replace every character with a dash, unless it is 
 	               an alphanumeric character, a dot or an underscore.
 	 -p
 	--portable     Equivalent to --nocontrol --trim --noblank
-	               --ascii-vowels --only-word --norep --trim
+	               --ascii-vowels --nospecial --norep --trim
 	 -r
 	 -R
 	--recursive    Do all actions recursively.
@@ -114,8 +119,7 @@ asciivowels () {
 
 #===  FUNCTION =========================================================
 #
-#        NAME: noblank
-#
+#        NAME: noblank #
 #       USAGE: noblank PATHNAME PATTERN VARNAME
 #
 # DESCRIPTION: Use the expanded value of PATTERN (the parent_matcher) to
@@ -141,9 +145,9 @@ noblank () {
 
 #===  FUNCTION =========================================================
 #
-#        NAME: only-word
+#        NAME: nospecial
 #
-#       USAGE: only-word PATHNAME PATTERN VARNAME
+#       USAGE: nospecial PATHNAME PATTERN VARNAME
 #
 # DESCRIPTION: Use the expanded value of PATTERN (the parent_matcher) to
 #              match a beggining substring (a prefix) of the expanded
@@ -160,7 +164,7 @@ noblank () {
 #                        substitution). 
 #              VARNAME  (A variable name).
 #=======================================================================
-only-word () {
+nospecial () {
 	local suffix="${1#$2}"
 	local prefix="${1%$suffix}"
 	suffix="${suffix//[^[:word:].]/-}"
@@ -237,7 +241,7 @@ norep () {
 #              trim PATHNAME PATTERN VARNAME
 #              noblank PATHNAME PATTERN VARNAME
 #              asciivowels PATHNAME PATTERN VARNAME
-#              only-word PATHNAME PATTERN VARNAME
+#              nospecial PATHNAME PATTERN VARNAME
 #              norep PATHNAME PATTERN VARNAME
 #              trim PATHNAME PATTERN VARNAME
 #              }
@@ -315,8 +319,6 @@ trim () {
 #-----------------------------------------------------------------------
 # BEGINNING OF MAIN CODE
 #-----------------------------------------------------------------------
-source ~/code/bash/upvars/upvars.sh
-source ~/code/bash/getoptx/getoptx.bash
 OLD_LC_ALL=$LC_ALL
 LC_ALL=C
 shopt -s extglob
@@ -326,11 +328,11 @@ recursive=false
 #-----------------------------------------------------------------------
 optindex=0
 while getoptex "ascii-vowels noblank nocontrol norep h help p portable r
-	recursive R only-word trim" "$@"; do
+	recursive R nospecial trim" "$@"; do
 	case "$OPTOPT" in
 		ascii-vowels) editopts[$optindex]=ascii-vowels
 		              ;;
-		noblank)     editopts[$optindex]=noblank
+		noblank)      editopts[$optindex]=noblank
 		              ;;
 		nocontrol)    editopts[$optindex]=nocontrol
 		              ;;
@@ -350,28 +352,27 @@ while getoptex "ascii-vowels noblank nocontrol norep h help p portable r
 		              ;;
 		R)            recursive=true
 		              ;;
-		only-word)    editopts[$optindex]=s
+		nospecial)    editopts[$optindex]=s
 		              ;;
 		trim)         editopts[$optindex]=trim
 		              ;;
 	esac
 	optindex=$((${optindex}+1))
 done
+shift $(($OPTIND-1))
+#-----------------------------------------------------------------------
+# Check for command line correctness.
+#-----------------------------------------------------------------------
+[[ $# -eq 0 ]] && usage && exit
 #-----------------------------------------------------------------------
 # Build the find command.
 #-----------------------------------------------------------------------
-shift $(($OPTIND-1))
-if [ ! -d "$1" ]; then
-	usage
-	exit
-fi
 if [ $recursive == "true" ]; then
 	find_opts="-depth"
 else
 	find_opts="-maxdepth 1"
 fi
-root_dir="$1"
-find "$root_dir" $find_opts -print0 |
+find "$@" $find_opts -print0 |
 #-----------------------------------------------------------------------
 # Execute edit actions on every founded file and directory.
 #-----------------------------------------------------------------------
@@ -409,8 +410,8 @@ while IFS="" read -r -d "" file; do
 			nocntrl "$new_name" "$parent_matcher" \
 				"new_name"
 		fi
-		if [ $editopt == only-word ]; then
-			only-word "$new_name" "$parent_matcher" \
+		if [ $editopt == nospecial ]; then
+			nospecial "$new_name" "$parent_matcher" \
 				"new_name"
 		fi
 		if [ $editopt == help ]; then
