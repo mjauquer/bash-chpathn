@@ -18,7 +18,7 @@ source ~/code/bash/pathnlib/pathnlib.sh
 #        NOTES: --
 #       AUTHOR: Marcelo Auquer, auquer@gmail.com
 #      CREATED: 02/19/2012
-#     REVISION: 03/04/2012
+#     REVISION: 03/05/2012
 #
 #======================================================================= 
 
@@ -45,8 +45,7 @@ source ~/code/bash/pathnlib/pathnlib.sh
 #=======================================================================
 usage () {
 	cat <<- EOF
-	Usage: chpathn.sh [-b] [-c] [-h] [-p] [-r] [-R] [-s] [-t] [-v]\
-	PATH...
+	Usage: chpathn.sh [OPTIONS] PATH...
 	
 	Change the name of files and subdirectories of the directories
 	listed in PATH...
@@ -60,6 +59,11 @@ usage () {
 	               underscore) with only one character.
 	--nospecial    Replace every character with a dash, unless it is 
 	               an alphanumeric character, a dot or an underscore.
+	--output-to    Argument required. Move the target file or
+	               directory to the directory specified by argument.
+		       If argument has a relative form (do not lead with
+	               a slash), consider it relative to the target's
+		       ancestor directory specified in PATH...
 	 -p
 	--portable     Equivalent to --nocontrol --trim --noblank
 	               --ascii-vowels --nospecial --norep --trim
@@ -328,8 +332,8 @@ recursive=false
 # Parse command line options.
 #-----------------------------------------------------------------------
 optindex=0
-while getoptex "ascii-vowels noblank nocontrol norep h help p portable r
-	recursive R nospecial trim" "$@"; do
+while getoptex "ascii-vowels h help noblank nocontrol norep p portable
+	output-to: r recursive R nospecial trim" "$@"; do
 	case "$OPTOPT" in
 		ascii-vowels) editopts[$optindex]=ascii-vowels
 		              ;;
@@ -339,6 +343,8 @@ while getoptex "ascii-vowels noblank nocontrol norep h help p portable r
 		              ;;
 		norep)        editopts[$optindex]=norep
 		              ;;
+		output-to)    output_opt="$OPTARG"
+			      ;;
 		h)            editopts[$optindex]=h
 		              ;;
 		help)         editopts[$optindex]=help
@@ -370,8 +376,7 @@ shift $(($OPTIND-1))
 #-----------------------------------------------------------------------
 OLD_IFS=$IFS
 IFS="$(printf '\n\t')"
-[[ $# < 1 ]] && rm_subtrees pathnames $@
-IFS=$OLD_IFS
+[[ $# > 1 ]] && rm_subtrees pathnames "$@" || pathnames=$@
 if [ $recursive == "true" ]; then
 	find_opts="-depth"
 else
@@ -379,10 +384,11 @@ else
 fi
 find ${pathnames[@]} $find_opts -print0 |
 while IFS="" read -r -d "" file; do
-	new_name="$file"
+	IFS="$(printf '\n\t')"
+	new_name=$file
 	get_parentmatcher parent_matcher "$file"
 	#--------------------------------------------------------------
-	# Call editing functions on the current file.
+	# Call editing functions on the current filename.
 	#--------------------------------------------------------------
 	for editopt in "${editopts[@]}"; do
 		if [ $editopt == ascii-vowels ]; then
@@ -418,6 +424,14 @@ while IFS="" read -r -d "" file; do
 		fi
 	done
 	#--------------------------------------------------------------
+	# If --output-to option was given, build output directory
+	# pathname.
+	#--------------------------------------------------------------
+	[ "$output_opt" ] && get_outputdir output_dir "$output_opt" \
+		"$file" ${pathnames[@]}
+	[ "$output_dir" ] && mkdir -p "$output_dir" &&
+	new_name="$output_dir"/"${new_name#$parent_matcher}"
+	#--------------------------------------------------------------
 	# Rename file. Handle name conflicts.
 	#--------------------------------------------------------------
 	if [ "$file" == "$new_name" ]; then
@@ -431,3 +445,4 @@ while IFS="" read -r -d "" file; do
 	parent_matcher=
 done
 LC_ALL=$OLDLC_ALL
+IFS=$OLD_IFS
