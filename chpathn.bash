@@ -1,4 +1,4 @@
-#!/bin/bash
+#! /bin/bash
 
 source ~/code/bash/upvars/upvars.sh
 source ~/code/bash/getoptx/getoptx.bash
@@ -18,7 +18,7 @@ source ~/code/bash/pathnlib/pathnlib.sh
 #        NOTES: --
 #       AUTHOR: Marcelo Auquer, auquer@gmail.com
 #      CREATED: 02/19/2012
-#     REVISION: 03/02/2012
+#     REVISION: 03/04/2012
 #
 #======================================================================= 
 
@@ -46,9 +46,10 @@ source ~/code/bash/pathnlib/pathnlib.sh
 usage () {
 	cat <<- EOF
 	Usage: chpathn.sh [-b] [-c] [-h] [-p] [-r] [-R] [-s] [-t] [-v]\
-	DIR
+	PATH...
 	
-	Change the name of files and subdirectories in DIR.
+	Change the name of files and subdirectories of the directories
+	listed in PATH...
 
 	--ascii-vowels Replace non-ascii vowels with ascii ones.
 	 -h
@@ -369,7 +370,7 @@ shift $(($OPTIND-1))
 #-----------------------------------------------------------------------
 OLD_IFS=$IFS
 IFS="$(printf '\n\t')"
-rm_subtrees pathnames $@
+[[ $# < 1 ]] && rm_subtrees pathnames $@
 IFS=$OLD_IFS
 if [ $recursive == "true" ]; then
 	find_opts="-depth"
@@ -377,61 +378,43 @@ else
 	find_opts="-maxdepth 1"
 fi
 find ${pathnames[@]} $find_opts -print0 |
-#-----------------------------------------------------------------------
-# Execute edit actions on every founded file and directory.
-#-----------------------------------------------------------------------
 while IFS="" read -r -d "" file; do
 	new_name="$file"
-	#--------------------------------------------------------------
-	# Build the pattern which will match the absolute pathname of
-	# the current file's parent directory.
-	#--------------------------------------------------------------
-	slashes="${file//[^\/]}"
-	depth=${#slashes}	
-	if [ ${#file} -eq ${#slashes} ]; then
-		echo "Error: file $file skipped." 2>&1
-		parent_matcher=
-		continue
-	fi
-	subdir_matcher="[^/]*/"
-	while [ $depth -ne 0 ]; do
-		parent_matcher="$parent_matcher$subdir_matcher"
-		depth=$(($depth-1))
-	done
+	get_parentmatcher parent_matcher "$file"
 	#--------------------------------------------------------------
 	# Call editing functions on the current file.
 	#--------------------------------------------------------------
 	for editopt in "${editopts[@]}"; do
 		if [ $editopt == ascii-vowels ]; then
 			asciivowels "$new_name" "$parent_matcher" \
-				"new_name"
+				new_name
 		fi
 		if [ $editopt == noblank ]; then
 			noblank "$new_name" "$parent_matcher" \
-				"new_name"
+				new_name
 		fi
 		if [ $editopt == nocontrol ]; then
 			nocntrl "$new_name" "$parent_matcher" \
-				"new_name"
+				new_name
 		fi
 		if [ $editopt == nospecial ]; then
 			nospecial "$new_name" "$parent_matcher" \
-				"new_name"
+				new_name
 		fi
 		if [ $editopt == help ]; then
 			usage
 		fi
 		if [ $editopt == portable ]; then
 			portable "$new_name" "$parent_matcher" \
-				"new_name"
+				new_name
 		fi
 		if [ $editopt == norep ]; then
 			norep "$new_name" "$parent_matcher" \
-				"new_name"
+				new_name
 		fi
 		if [ $editopt == trim ]; then
 			trim "$new_name" "$parent_matcher" \
-				"new_name"
+				new_name
 		fi
 	done
 	#--------------------------------------------------------------
