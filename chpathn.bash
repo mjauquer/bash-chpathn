@@ -328,6 +328,7 @@ OLD_LC_ALL=$LC_ALL
 LC_ALL=C
 shopt -s extglob
 recursive=false
+findopts[0]="-maxdepth 1"
 #-----------------------------------------------------------------------
 # Parse command line options.
 #-----------------------------------------------------------------------
@@ -353,11 +354,11 @@ while getoptex "ascii-vowels h help noblank nocontrol norep p portable
 		              ;;
 		portable)     editopts[$optindex]=portable
 		              ;;
-		r)            recursive=true
+		r)            findopts[0]="-depth"
+			      ;;
+		recursive)    findopts[0]="-depth"
 		              ;;
-		recursive)    recursive=true
-		              ;;
-		R)            recursive=true
+		R)            findopts[0]="-depth"
 		              ;;
 		nospecial)    editopts[$optindex]=s
 		              ;;
@@ -376,14 +377,10 @@ shift $(($OPTIND-1))
 #-----------------------------------------------------------------------
 OLD_IFS=$IFS
 IFS="$(printf '\n\t')"
-[[ $# > 1 ]] && rm_subtrees pathnames "$@" || pathnames=$@
-if [ $recursive == "true" ]; then
-	find_opts="-depth"
-else
-	find_opts="-maxdepth 1"
-fi
+[[ $# -gt 1 ]] && rm_subtrees pathnames "$@" || pathnames=$@
 find ${pathnames[@]} $find_opts -print0 |
 while IFS="" read -r -d "" file; do
+	[[ ! -a "$file" ]] && continue
 	IFS="$(printf '\n\t')"
 	new_name=$file
 	get_parentmatcher parent_matcher "$file"
