@@ -367,12 +367,16 @@ shift $(($OPTIND-1))
 #-----------------------------------------------------------------------
 # Build the find command.
 #-----------------------------------------------------------------------
+OLD_IFS=$IFS
+IFS="$(printf '\n\t')"
+rm_subtrees pathnames $@
+IFS=$OLD_IFS
 if [ $recursive == "true" ]; then
 	find_opts="-depth"
 else
 	find_opts="-maxdepth 1"
 fi
-find "$@" $find_opts -print0 |
+find ${pathnames[@]} $find_opts -print0 |
 #-----------------------------------------------------------------------
 # Execute edit actions on every founded file and directory.
 #-----------------------------------------------------------------------
