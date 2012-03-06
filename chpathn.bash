@@ -3,6 +3,7 @@
 source ~/code/bash/upvars/upvars.sh
 source ~/code/bash/getoptx/getoptx.bash
 source ~/code/bash/pathnlib/pathnlib.sh
+source ~/code/bash/ftypelib/ftypelib.sh
 
 #=======================================================================
 #
@@ -61,9 +62,9 @@ usage () {
 	               an alphanumeric character, a dot or an underscore.
 	--output-to    Argument required. Move the target file or
 	               directory to the directory specified by argument.
-		       If argument has a relative form (do not lead with
+	               If argument has a relative form (do not lead with
 	               a slash), consider it relative to the target's
-		       ancestor directory specified in PATH...
+	               ancestor directory specified in PATH...
 	 -p
 	--portable     Equivalent to --nocontrol --trim --noblank
 	               --ascii-vowels --nospecial --norep --trim
@@ -72,6 +73,18 @@ usage () {
 	--recursive    Do all actions recursively.
 	--trim         Remove leading dashes or blank characters and 
 	               trailing blank characters.
+	--type         Argument required and may be:
+	                b Target must be a block (buffered) special.
+			c Target must be a character (unbuffered)
+			  special.
+	                d Target must be a directory.
+			p Target must be a named pipe (FIFO).
+	                f Target must be a file.
+			l Target must be a symbolic link.
+			s Target must be a socket.
+			D Target must be a door (Solaris)
+	--ftype         Argument required and may be:
+	                  image
 	EOF
 }
 
@@ -327,45 +340,62 @@ trim () {
 OLD_LC_ALL=$LC_ALL
 LC_ALL=C
 shopt -s extglob
-recursive=false
-findopts[0]="-maxdepth 1"
+find_opts[0]="-maxdepth 1"
 #-----------------------------------------------------------------------
 # Parse command line options.
 #-----------------------------------------------------------------------
-optindex=0
-while getoptex "ascii-vowels h help noblank nocontrol norep p portable
-	output-to: r recursive R nospecial trim" "$@"; do
+editoptind=0
+findtestind=0
+while getoptex "ascii-vowels ftype: h help noblank nocontrol norep p portable
+	output-to: r recursive R nospecial trim type:" "$@"; do
 	case "$OPTOPT" in
-		ascii-vowels) editopts[$optindex]=ascii-vowels
+		ascii-vowels) editopts[$editoptind]=ascii-vowels
+		              editoptind=$((${editoptind}+1))
 		              ;;
-		noblank)      editopts[$optindex]=noblank
+		ftype)        if [ "$OPTARG" == image ]; then
+			              ftype="image"
+			      fi
 		              ;;
-		nocontrol)    editopts[$optindex]=nocontrol
+		noblank)      editopts[$editoptind]=noblank
+		              editoptind=$((${editoptind}+1))
 		              ;;
-		norep)        editopts[$optindex]=norep
+		nocontrol)    editopts[$editoptind]=nocontrol
+		              editoptind=$((${editoptind}+1))
+		              ;;
+		norep)        editopts[$editoptind]=norep
+		              editoptind=$((${editoptind}+1))
 		              ;;
 		output-to)    output_opt="$OPTARG"
 			      ;;
-		h)            editopts[$optindex]=h
+		h)            editopts[$editoptind]=h
+		              editoptind=$((${editoptind}+1))
 		              ;;
-		help)         editopts[$optindex]=help
+		help)         editopts[$editoptind]=help
+		              editoptind=$((${editoptind}+1))
 		              ;;
-		p)            editopts[$optindex]=portable
+		p)            editopts[$editoptind]=portable
+		              editoptind=$((${editoptind}+1))
 		              ;;
-		portable)     editopts[$optindex]=portable
+		portable)     editopts[$editoptind]=portable
+		              editoptind=$((${editoptind}+1))
 		              ;;
-		r)            findopts[0]="-depth"
+		r)            find_opts[0]="-depth"
 			      ;;
-		recursive)    findopts[0]="-depth"
+		recursive)    find_opts[0]="-depth"
 		              ;;
-		R)            findopts[0]="-depth"
+		R)            find_opts[0]="-depth"
 		              ;;
-		nospecial)    editopts[$optindex]=s
+		nospecial)    editopts[$editoptind]=s
+		              editoptind=$((${editoptind}+1))
 		              ;;
-		trim)         editopts[$optindex]=trim
+		trim)         editopts[$editoptind]=trim
+		              editoptind=$((${editoptind}+1))
 		              ;;
+		type)         [[ ! $OPTARG =~ [bcdpflsD] ]] && continue
+			      find_tests[$findtestind]="-type $OPTARG"
+		              findtestind=$((${findtestind}+1))
+			      ;;
 	esac
-	optindex=$((${optindex}+1))
 done
 shift $(($OPTIND-1))
 #-----------------------------------------------------------------------
@@ -378,10 +408,15 @@ shift $(($OPTIND-1))
 OLD_IFS=$IFS
 IFS="$(printf '\n\t')"
 [[ $# -gt 1 ]] && rm_subtrees pathnames "$@" || pathnames=$@
-find ${pathnames[@]} $find_opts -print0 |
+IFS=$OLD_IFS
+find ${pathnames[@]} $find_opts $find_tests -print0 |
 while IFS="" read -r -d "" file; do
-	[[ ! -a "$file" ]] && continue
 	IFS="$(printf '\n\t')"
+	[[ ! -a "$file" ]] && continue
+	[[ "$ftype" == image ]] &&
+	if ! is_image "$file"; then
+		continue
+	fi
 	new_name=$file
 	get_parentmatcher parent_matcher "$file"
 	#--------------------------------------------------------------
