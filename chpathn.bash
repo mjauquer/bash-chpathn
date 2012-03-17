@@ -1,9 +1,9 @@
 #! /bin/bash
 
-source ~/code/bash/upvars/upvars.sh
-source ~/code/bash/getoptx/getoptx.bash
-source ~/code/bash/pathnlib/pathnlib.sh
-source ~/code/bash/ftypelib/ftypelib.sh
+source ~/code/bash/lib/upvars/upvars.sh
+source ~/code/bash/lib/getoptx/getoptx.bash
+source ~/code/bash/lib/pathn/libpathn.sh
+source ~/code/bash/lib/ftype/libftype.sh
 
 #=======================================================================
 #
@@ -25,24 +25,12 @@ source ~/code/bash/ftypelib/ftypelib.sh
 
 #===  FUNCTION =========================================================
 #
-#        NAME: asciivowels
+#        NAME: usage
 #
-#       USAGE: asciivowels PATHNAME PATTERN VARNAME
+#       USAGE: usage
 #
-# DESCRIPTION: Use the expanded value of PATTERN (the parent_matcher) to
-#              match a beggining substring (a prefix) of the expanded
-#              value of PATHNAME (pathname) to be preserved of further
-#              editing of this function. Replace in the trailing
-#              substring not matched by the parent_matcher (the suffix)
-#              every non-ascii vowel character with his matching ascii
-#              vowel character. Store the resulting string in the
-#              caller's variable VARNAME.
+# DESCRIPTION: Print a help message to stdout.
 #
-#  PARAMETERS: PATHNAME (A string).
-#              PATTERN  (A word subject of tilde expansion, parameter
-#                        expansion, command substitution and arithmetic
-#                        substitution). 
-#              VARNAME  (A variable name).
 #=======================================================================
 usage () {
 	cat <<- EOF
@@ -337,17 +325,19 @@ trim () {
 #-----------------------------------------------------------------------
 # BEGINNING OF MAIN CODE
 #-----------------------------------------------------------------------
+
 OLD_LC_ALL=$LC_ALL
 LC_ALL=C
 shopt -s extglob
-find_opts[0]="-maxdepth 1"
+
 #-----------------------------------------------------------------------
 # Parse command line options.
 #-----------------------------------------------------------------------
+
+find_opts[0]="-maxdepth 1"
 editoptind=0
 findtestind=0
-while getoptex "ascii-vowels ftype: h help noblank nocontrol norep p portable
-	output-to: r recursive R nospecial trim type:" "$@"; do
+while getoptex "ascii-vowels ftype: h help noblank nocontrol norep p portable output-to: r recursive R nospecial trim type:" "$@"; do
 	case "$OPTOPT" in
 		ascii-vowels) editopts[$editoptind]=ascii-vowels
 		              editoptind=$((${editoptind}+1))
@@ -398,13 +388,17 @@ while getoptex "ascii-vowels ftype: h help noblank nocontrol norep p portable
 	esac
 done
 shift $(($OPTIND-1))
+
 #-----------------------------------------------------------------------
 # Check for command line correctness.
 #-----------------------------------------------------------------------
+
 [[ $# -eq 0 ]] && usage && exit
+
 #-----------------------------------------------------------------------
 # Build the find command.
 #-----------------------------------------------------------------------
+
 OLD_IFS=$IFS
 IFS="$(printf '\n\t')"
 [[ $# -gt 1 ]] && rm_subtrees pathnames "$@" || pathnames=$@
@@ -419,9 +413,11 @@ while IFS="" read -r -d "" file; do
 	fi
 	new_name=$file
 	get_parentmatcher parent_matcher "$file"
+	
 	#--------------------------------------------------------------
 	# Call editing functions on the current filename.
 	#--------------------------------------------------------------
+
 	for editopt in "${editopts[@]}"; do
 		if [ $editopt == ascii-vowels ]; then
 			asciivowels "$new_name" "$parent_matcher" \
@@ -455,17 +451,21 @@ while IFS="" read -r -d "" file; do
 				new_name
 		fi
 	done
+
 	#--------------------------------------------------------------
 	# If --output-to option was given, build output directory
 	# pathname.
 	#--------------------------------------------------------------
+
 	[ "$output_opt" ] && get_outputdir output_dir "$output_opt" \
 		"$file" ${pathnames[@]}
 	[ "$output_dir" ] && mkdir -p "$output_dir" &&
 	new_name="$output_dir"/"${new_name#$parent_matcher}"
+
 	#--------------------------------------------------------------
 	# Rename file. Handle name conflicts.
 	#--------------------------------------------------------------
+
 	if [ "$file" == "$new_name" ]; then
 		parent_matcher=
 		continue
