@@ -406,7 +406,7 @@ IFS=$OLD_IFS
 find ${pathnames[@]} $find_opts $find_tests -print0 |
 while IFS="" read -r -d "" file; do
 	IFS="$(printf '\n\t')"
-	[[ ! -d "$file" ]] && continue
+	[[ ! -f "$file" ]] && continue
 	[[ "$ftype" == image ]] &&
 	if ! is_image "$file"; then
 		continue
