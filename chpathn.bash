@@ -99,7 +99,7 @@ usage () {
 #=======================================================================
 asciivowels () {
 	local suffix="${1#$2}"
-	local prefix="${1%$suffix}"
+	local prefix="${1%/*}/"
 	suffix=${suffix//â/a}
 	suffix=${suffix//à/a}
 	suffix=${suffix//á/a}
@@ -144,7 +144,7 @@ asciivowels () {
 #=======================================================================
 noblank () {
 	local suffix="${1#$2}"
-	local prefix="${1%$suffix}"
+	local prefix="${1%/*}/"
 	suffix="${suffix//[[:blank:]]/_}"
 	local $3 && upvar $3 "$prefix$suffix"
 }
@@ -172,7 +172,7 @@ noblank () {
 #=======================================================================
 nospecial () {
 	local suffix="${1#$2}"
-	local prefix="${1%$suffix}"
+	local prefix="${1%/*}/"
 	suffix="${suffix//[^[:word:].]/-}"
 	local $3 && upvar $3 "$prefix$suffix"
 	trim "$new_name" "$2" "new_name"
@@ -200,7 +200,7 @@ nospecial () {
 #=======================================================================
 nocntrl () {
 	local suffix="${1#$2}"
-	local prefix="${1%$suffix}"
+	local prefix="${1%/*}/"
 	suffix="${suffix//[[:cntrl:]]}"
 	local $3 && upvar $3 "$prefix$suffix"
 }
@@ -228,7 +228,7 @@ nocntrl () {
 #=======================================================================
 norep () {
 	local suffix="${1#$2}"
-	local prefix="${1%$suffix}"
+	local prefix="${1%/*}/"
 	suffix="$(echo $suffix | tr -s [-_])"
 	local $3 && upvar $3 "$prefix$suffix"
 	trim "$new_name" "$2" "new_name"
@@ -260,7 +260,7 @@ norep () {
 #=======================================================================
 portable () {
 	local suffix="${1#$2}"
-	local prefix="${1%$suffix}"
+	local prefix="${1%/*}/"
 	suffix="${suffix//[[:cntrl:]]}"
 	suffix="${suffix##+([-[[:space:]])}"
 	suffix="${suffix%%+([[:space:]])}"
@@ -316,7 +316,7 @@ portable () {
 #=======================================================================
 trim () {
 	local suffix="${1#$2}"
-	local prefix="${1%$suffix}"
+	local prefix="${1%/*}/"
 	suffix="${suffix##+([-[[:space:]])}"
 	suffix="${suffix%%+([[:space:]])}"
 	local $3 && upvar $3 "$prefix$suffix"
@@ -406,7 +406,8 @@ IFS=$OLD_IFS
 find ${pathnames[@]} $find_opts $find_tests -print0 |
 while IFS="" read -r -d "" file; do
 	IFS="$(printf '\n\t')"
-	[[ ! -f "$file" ]] && continue
+	[[ "$file" == . ]] && continue
+	[[ ! -a "$file" ]] && continue
 	[[ "$ftype" == image ]] &&
 	if ! is_image "$file"; then
 		continue
