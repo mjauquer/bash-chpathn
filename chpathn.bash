@@ -1,9 +1,9 @@
 #! /bin/bash
 
-source ~/code/bash/lib/upvars/upvars.sh
-source ~/code/bash/lib/getoptx/getoptx.bash
-source ~/code/bash/lib/pathn/libpathn.sh
-source ~/code/bash/lib/ftype/libftype.sh
+source ~/code/bash/chpathn/upvars.sh
+source ~/code/bash/chpathn/getoptx.bash
+source ~/code/bash/chpathn/libpathn.sh
+source ~/code/bash/chpathn/libftype.sh
 
 #=======================================================================
 #
