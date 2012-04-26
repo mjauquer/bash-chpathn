@@ -74,3 +74,28 @@ is_iso () {
 		return 0
 	IFS=$OLD_IFS && return 1
 }
+
+#===  FUNCTION =========================================================
+#
+#        NAME: is_text
+#
+#       USAGE: is_text PATHNAME
+#
+# DESCRIPTION: Test if file is a text file. Return 0 if it is or 1 if it
+#              is not.
+#
+#  PARAMETERS: PATHNAME (A pathname).
+#
+#=======================================================================
+is_text () {
+	OLD_IFS=$IFS
+	IFS="$(printf '\n\t')"
+	{
+		[[ "$#" -ne 1 ]] && cat <<- EOF
+		Error: function is_text requires one argument.
+		EOF
+	} && exit 1
+	[[ $(file -b --mime-type "$1") == text/plain ]] && IFS=$OLD_IFS &&
+		return 0
+	IFS=$OLD_IFS && return 1
+}

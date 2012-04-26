@@ -62,17 +62,18 @@ usage () {
 	--trim         Remove leading dashes or blank characters and 
 	               trailing blank characters.
 	--type         Argument required and may be:
-	                b Target must be a block (buffered) special.
-			c Target must be a character (unbuffered)
-			  special.
-	                d Target must be a directory.
-			p Target must be a named pipe (FIFO).
-	                f Target must be a file.
-			l Target must be a symbolic link.
-			s Target must be a socket.
-			D Target must be a door (Solaris)
-	--ftype         Argument required and may be:
-	                  image
+	                 b Target must be a block (buffered) special.
+	                 c Target must be a character (unbuffered)
+	                   special.
+	                 d Target must be a directory.
+	                 p Target must be a named pipe (FIFO).
+	                 f Target must be a file.
+	                 l Target must be a symbolic link.
+	                 s Target must be a socket.
+	                 D Target must be a door (Solaris)
+	--ftype        Argument required and may be:
+	                 image
+	                 text
 	EOF
 }
 
@@ -345,6 +346,9 @@ while getoptex "ascii-vowels ftype: h help noblank nocontrol norep p portable ou
 		ftype)        if [ "$OPTARG" == image ]; then
 			              ftype="image"
 			      fi
+		              if [ "$OPTARG" == text ]; then
+			              ftype="text"
+			      fi
 		              ;;
 		noblank)      editopts[$editoptind]=noblank
 		              editoptind=$((${editoptind}+1))
@@ -408,8 +412,12 @@ while IFS="" read -r -d "" file; do
 	IFS="$(printf '\n\t')"
 	[[ "$file" == . ]] && continue
 	[[ ! -a "$file" ]] && continue
-	[[ "$ftype" == image ]] &&
+	[[ "$ftype" == "image" ]] &&
 	if ! is_image "$file"; then
+		continue
+	fi
+	[[ "$ftype" == "text" ]] &&
+	if ! is_text "$file"; then
 		continue
 	fi
 	new_name=$file
