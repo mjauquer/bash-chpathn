@@ -262,6 +262,8 @@ norep () {
 portable () {
 	local suffix="${1#$2}"
 	local prefix="${1%/*}/"
+echo "portable(): suffix: $suffix"
+echo "portable(): prefix: $prefix"
 	suffix="${suffix//[[:cntrl:]]}"
 	suffix="${suffix##+([-[[:space:]])}"
 	suffix="${suffix%%+([[:space:]])}"
@@ -468,7 +470,7 @@ while IFS="" read -r -d "" file; do
 
 	[ "$output_opt" ] && get_outputdir output_dir "$output_opt" \
 		"$file" ${pathnames[@]}
-	[ "$output_dir" ] && mkdir -p "$output_dir" &&
+	[ "$output_dir" ] && mkdir -p "$output_dir" && \
 	new_name="$output_dir"/"${new_name#$parent_matcher}"
 
 	#--------------------------------------------------------------
