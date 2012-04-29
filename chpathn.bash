@@ -262,8 +262,6 @@ norep () {
 portable () {
 	local suffix="${1#$2}"
 	local prefix="${1%/*}/"
-echo "portable(): suffix: $suffix"
-echo "portable(): prefix: $prefix"
 	suffix="${suffix//[[:cntrl:]]}"
 	suffix="${suffix##+([-[[:space:]])}"
 	suffix="${suffix%%+([[:space:]])}"
