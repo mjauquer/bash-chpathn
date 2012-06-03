@@ -1,27 +1,37 @@
 #! /bin/bash
 
+#=======================================================================
+#
+# chpathn.bash (See description below).
+# Copyright (C) 2012  Marcelo Javier Auquer
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+#        USAGE: See function 'usage' below.
+#
+#  DESCRIPTION: Change filenames in the operand directories.
+#
+# REQUIREMENTS: getoptx.bash, upvars.bash
+#         BUGS: --
+#        NOTES: Any suggestion is welcomed at auq..r@gmail.com (fill in
+#               the dots).
+#
+
 source ~/code/bash/chpathn/upvars/upvars.bash
 source ~/code/bash/chpathn/getoptx/getoptx.bash
 source ~/code/bash/chpathn/libpathn.sh
 source ~/code/bash/chpathn/libftype.sh
-
-#=======================================================================
-#
-#         FILE: chpathn.sh
-#
-#        USAGE: chpathn.sh [OPTIONS] PATH...
-#
-#  DESCRIPTION: Change filenames in the operand directories.
-#
-#      OPTIONS: See function 'usage' below.
-# REQUIREMENTS: upvars.sh
-#         BUGS: --
-#        NOTES: --
-#       AUTHOR: Marcelo Auquer, auquer@gmail.com
-#      CREATED: 02/19/2012
-#     REVISION: 03/05/2012
-#
-#======================================================================= 
 
 #===  FUNCTION =========================================================
 #
@@ -31,7 +41,6 @@ source ~/code/bash/chpathn/libftype.sh
 #
 # DESCRIPTION: Print a help message to stdout.
 #
-#=======================================================================
 usage () {
 	cat <<- EOF
 	Usage: chpathn.sh [OPTIONS] PATH...
@@ -97,7 +106,7 @@ usage () {
 #                        expansion, command substitution and arithmetic
 #                        substitution). 
 #              VARNAME  (A variable name).
-#=======================================================================
+#
 asciivowels () {
 	local suffix="${1#$2}"
 	local prefix="${1%/*}/"
@@ -142,7 +151,7 @@ asciivowels () {
 #                        expansion, command substitution and arithmetic
 #                        substitution). 
 #              VARNAME  (A variable name).
-#=======================================================================
+#
 noblank () {
 	local suffix="${1#$2}"
 	local prefix="${1%/*}/"
@@ -170,7 +179,7 @@ noblank () {
 #                        expansion, command substitution and arithmetic
 #                        substitution). 
 #              VARNAME  (A variable name).
-#=======================================================================
+#
 nospecial () {
 	local suffix="${1#$2}"
 	local prefix="${1%/*}/"
@@ -198,7 +207,7 @@ nospecial () {
 #                        expansion, command substitution and arithmetic
 #                        substitution). 
 #              VARNAME  (A variable name).
-#=======================================================================
+#
 nocntrl () {
 	local suffix="${1#$2}"
 	local prefix="${1%/*}/"
@@ -226,7 +235,7 @@ nocntrl () {
 #                        expansion, command substitution and arithmetic
 #                        substitution). 
 #              VARNAME  (A variable name).
-#=======================================================================
+#
 norep () {
 	local suffix="${1#$2}"
 	local prefix="${1%/*}/"
@@ -258,7 +267,7 @@ norep () {
 #                        expansion, command substitution and arithmetic
 #                        substitution). 
 #              VARNAME  (A variable name).
-#=======================================================================
+#
 portable () {
 	local suffix="${1#$2}"
 	local prefix="${1%/*}/"
@@ -314,7 +323,7 @@ portable () {
 #                        expansion, command substitution and arithmetic
 #                        substitution). 
 #              VARNAME  (A variable name).
-#=======================================================================
+#
 trim () {
 	local suffix="${1#$2}"
 	local prefix="${1%/*}/"
@@ -331,10 +340,7 @@ OLD_LC_ALL=$LC_ALL
 LC_ALL=C
 shopt -s extglob
 
-#-----------------------------------------------------------------------
 # Parse command line options.
-#-----------------------------------------------------------------------
-
 find_opts[0]="-maxdepth 1"
 editoptind=0
 findtestind=0
@@ -393,16 +399,10 @@ while getoptex "ascii-vowels ftype: h help noblank nocontrol norep p portable ou
 done
 shift $(($OPTIND-1))
 
-#-----------------------------------------------------------------------
 # Check for command line correctness.
-#-----------------------------------------------------------------------
-
 [[ $# -eq 0 ]] && usage && exit
 
-#-----------------------------------------------------------------------
 # Build the find command.
-#-----------------------------------------------------------------------
-
 OLD_IFS=$IFS
 IFS="$(printf '\n\t')"
 [[ $# -gt 1 ]] && rm_subtrees pathnames "$@" || pathnames=$@
@@ -423,10 +423,7 @@ while IFS="" read -r -d "" file; do
 	new_name=$file
 	get_parentmatcher parent_matcher "$file"
 	
-	#--------------------------------------------------------------
 	# Call editing functions on the current filename.
-	#--------------------------------------------------------------
-
 	for editopt in "${editopts[@]}"; do
 		if [ $editopt == ascii-vowels ]; then
 			asciivowels "$new_name" "$parent_matcher" \
@@ -461,20 +458,14 @@ while IFS="" read -r -d "" file; do
 		fi
 	done
 
-	#--------------------------------------------------------------
 	# If --output-to option was given, build output directory
 	# pathname.
-	#--------------------------------------------------------------
-
 	[ "$output_opt" ] && get_outputdir output_dir "$output_opt" \
 		"$file" ${pathnames[@]}
 	[ "$output_dir" ] && mkdir -p "$output_dir" && \
 	new_name="$output_dir"/"${new_name#$parent_matcher}"
 
-	#--------------------------------------------------------------
 	# Rename file. Handle name conflicts.
-	#--------------------------------------------------------------
-
 	if [ "$file" == "$new_name" ]; then
 		parent_matcher=
 		continue
