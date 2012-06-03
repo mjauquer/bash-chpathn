@@ -1,7 +1,7 @@
 #! /bin/bash
 
-source ~/code/bash/chpathn/upvars.sh
-source ~/code/bash/chpathn/getoptx.bash
+source ~/code/bash/chpathn/upvars/upvars.bash
+source ~/code/bash/chpathn/getoptx/getoptx.bash
 source ~/code/bash/chpathn/libpathn.sh
 source ~/code/bash/chpathn/libftype.sh
 
