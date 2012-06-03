@@ -30,6 +30,7 @@
 
 source ~/code/bash/chpathn/getoptx/getoptx.bash
 source ~/code/bash/chpathn/chpathn.flib
+source ~/code/bash/chpathn/pathname/pathname.flib
 source ~/code/bash/chpathn/libftype.sh
 
 #===  FUNCTION =========================================================
