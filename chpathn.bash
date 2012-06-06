@@ -23,7 +23,8 @@
 #  DESCRIPTION: Change filenames in the operand directories.
 #
 # REQUIREMENTS: getoptx.bash, upvars.bash
-#         BUGS: --
+#         BUGS: Pathnames with a leading dash can not be passed as an
+#               argument.
 #        NOTES: Any suggestion is welcomed at auq..r@gmail.com (fill in
 #               the dots).
 #
@@ -157,78 +158,83 @@ shift $(($OPTIND-1))
 [[ $# -eq 0 ]] && usage && exit
 
 # Build the find command.
-OLD_IFS=$IFS
-IFS="$(printf '\n\t')"
-[[ $# -gt 1 ]] && rm_subtrees pathnames "$@" || pathnames=$@
-IFS=$OLD_IFS
-find . $find_opts $find_tests -print0 |
-while IFS="" read -r -d "" file; do
-	IFS="$(printf '\n\t')"
-	[[ "$file" == . ]] && continue
-	[[ ! -a "$file" ]] && continue
-	[[ "$ftype" == "image" ]] &&
-	if ! is_image "$file"; then
-		continue
+for arg
+do
+	cd "$arg"
+	if [ $? -ne 0 ]
+	then
+		exit 1
 	fi
-	[[ "$ftype" == "text" ]] &&
-	if ! is_text "$file"; then
-		continue
-	fi
-	new_name=$file
-	get_parentmatcher parent_matcher "$file"
-	
-	# Call editing functions on the current filename.
-	for editopt in "${editopts[@]}"; do
-		if [ $editopt == ascii-vowels ]; then
-			asciivowels "$new_name" "$parent_matcher" \
-				new_name
+	find . $find_opts $find_tests -print0 |
+	while IFS="" read -r -d "" file; do
+		IFS="$(printf '\n\t')"
+		[[ "$file" == . ]] && continue
+		[[ ! -a "$file" ]] && continue
+		[[ "$ftype" == "image" ]] &&
+		if ! is_image "$file"; then
+			continue
 		fi
-		if [ $editopt == noblank ]; then
-			noblank "$new_name" "$parent_matcher" \
-				new_name
+		[[ "$ftype" == "text" ]] &&
+		if ! is_text "$file"; then
+			continue
 		fi
-		if [ $editopt == nocontrol ]; then
-			nocntrl "$new_name" "$parent_matcher" \
-				new_name
-		fi
-		if [ $editopt == nospecial ]; then
-			nospecial "$new_name" "$parent_matcher" \
-				new_name
-		fi
-		if [ $editopt == help ]; then
-			usage
-		fi
-		if [ $editopt == portable ]; then
-			portable "$new_name" "$parent_matcher" \
-				new_name
-		fi
-		if [ $editopt == norep ]; then
-			norep "$new_name" "$parent_matcher" \
-				new_name
-		fi
-		if [ $editopt == trim ]; then
-			trim "$new_name" "$parent_matcher" \
-				new_name
-		fi
-	done
+		new_name=$file
+		get_parentmatcher parent_matcher "$file"
+		
+		# Call editing functions on the current filename.
+		for editopt in "${editopts[@]}"; do
+			if [ $editopt == ascii-vowels ]; then
+				asciivowels "$new_name" "$parent_matcher" \
+					new_name
+			fi
+			if [ $editopt == noblank ]; then
+				noblank "$new_name" "$parent_matcher" \
+					new_name
+			fi
+			if [ $editopt == nocontrol ]; then
+				nocntrl "$new_name" "$parent_matcher" \
+					new_name
+			fi
+			if [ $editopt == nospecial ]; then
+				nospecial "$new_name" "$parent_matcher" \
+					new_name
+			fi
+			if [ $editopt == help ]; then
+				usage
+			fi
+			if [ $editopt == portable ]; then
+				portable "$new_name" "$parent_matcher" \
+					new_name
+			fi
+			if [ $editopt == norep ]; then
+				norep "$new_name" "$parent_matcher" \
+					new_name
+			fi
+			if [ $editopt == trim ]; then
+				trim "$new_name" "$parent_matcher" \
+					new_name
+			fi
+		done
 
-	# If --output-to option was given, build output directory
-	# pathname.
-	[ "$output_opt" ] && get_outputdir output_dir "$output_opt" \
-		"$file" ${pathnames[@]}
-	[ "$output_dir" ] && mkdir -p "$output_dir" && \
-	new_name="$output_dir"/"${new_name#$parent_matcher}"
+		# If --output-to option was given, build output directory
+		# pathname.
+		[ "$output_opt" ] && get_outputdir output_dir "$output_opt" \
+			"$file" ${pathnames[@]}
+		[ "$output_dir" ] && mkdir -p "$output_dir" && \
+		new_name="$output_dir"/"${new_name#$parent_matcher}"
 
-	# Rename file. Handle name conflicts.
-	if [ "$file" == "$new_name" ]; then
+		# Rename file. Handle name conflicts.
+		if [ "$file" == "$new_name" ]; then
+			parent_matcher=
+			continue
+		elif [ -e "$new_name" ]; then
+			echo "Error: file $new_name already exists." 2>&1
+		else
+			mv "$file" "$new_name"
+		fi
 		parent_matcher=
-		continue
-	elif [ -e "$new_name" ]; then
-		echo "Error: file $new_name already exists." 2>&1
-	else
-		mv "$file" "$new_name"
-	fi
-	parent_matcher=
+	done
+	cd "$OLDPWD"
 done
 LC_ALL=$OLDLC_ALL
 IFS=$OLD_IFS
