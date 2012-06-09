@@ -4,6 +4,3 @@
 [submodule "getoptx"]
 	path = getoptx
 	url = git@github.com:mjauquer/bash-getoptx.git
-[submodule "filetype"]
-	path = filetype
-	url = git@github.com:mjauquer/bash-filetype.git
