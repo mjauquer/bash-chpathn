@@ -31,7 +31,7 @@
 
 source ~/code/bash/chpathn/getoptx/getoptx.bash
 source ~/code/bash/chpathn/chpathn.flib
-source ~/code/bash/chpathn/libftype.sh
+source ~/code/bash/chpathn/filetype/filetype.flib
 
 #===  FUNCTION =========================================================
 #
@@ -169,13 +169,15 @@ do
 		IFS="$(printf '\n\t')"
 		[[ "$file" == . ]] && continue
 		[[ ! -a "$file" ]] && continue
-		[[ "$ftype" == "image" ]] &&
-		if ! is_image "$file"; then
-			continue
+		if [ "$ftype" == "image" ]
+		then
+			is_image image "$file"
+			[[ $image == true ]] || continue
 		fi
-		[[ "$ftype" == "text" ]] &&
-		if ! is_text "$file"; then
-			continue
+		if [ "$ftype" == "text" ]
+		then
+			is_text text "$file"
+			[[ $text == true ]] || continue
 		fi
 		new_name=$file
 		get_parentmatcher parent_matcher "$file"
