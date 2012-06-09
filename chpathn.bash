@@ -98,7 +98,8 @@ shopt -s extglob
 find_opts[0]="-maxdepth 1"
 editoptind=0
 findtestind=0
-while getoptex "ascii-vowels ftype: h help noblank nocontrol norep p portable output-to: r recursive R nospecial trim type:" "$@"; do
+while getoptex "ascii-vowels ftype: h help noblank nocontrol norep p portable output-to: r recursive R nospecial trim type:" "$@"
+do
 	case "$OPTOPT" in
 		ascii-vowels) editopts[$editoptind]=ascii-vowels
 		              editoptind=$((${editoptind}+1))
@@ -165,8 +166,11 @@ do
 		exit 1
 	fi
 	find . $find_opts $find_tests -print0 |
-	while IFS="" read -r -d "" file; do
+	while IFS="" read -r -d "" file
+	do
 		IFS="$(printf '\n\t')"
+
+		# Some files to be skipped.
 		[[ "$file" == . ]] && continue
 		[[ ! -a "$file" ]] && continue
 		if [ "$ftype" == "image" ]
@@ -179,53 +183,64 @@ do
 			is_text text "$file"
 			[[ $text == true ]] || continue
 		fi
+
 		new_name=$file
 		get_parentmatcher parent_matcher "$file"
 		
 		# Call editing functions on the current filename.
-		for editopt in "${editopts[@]}"; do
-			if [ $editopt == ascii-vowels ]; then
+		for editopt in "${editopts[@]}"
+		do
+			if [ $editopt == ascii-vowels ]
+			then
 				asciivowels "$new_name" "$parent_matcher" \
 					new_name
 			fi
-			if [ $editopt == noblank ]; then
+			if [ $editopt == noblank ]
+			then
 				noblank "$new_name" "$parent_matcher" \
 					new_name
 			fi
-			if [ $editopt == nocontrol ]; then
+			if [ $editopt == nocontrol ]
+			then
 				nocntrl "$new_name" "$parent_matcher" \
 					new_name
 			fi
-			if [ $editopt == nospecial ]; then
+			if [ $editopt == nospecial ]
+			then
 				nospecial "$new_name" "$parent_matcher" \
 					new_name
 			fi
-			if [ $editopt == help ]; then
+			if [ $editopt == help ]
+			then
 				usage
 			fi
-			if [ $editopt == portable ]; then
+			if [ $editopt == portable ]
+			then
 				portable "$new_name" "$parent_matcher" \
 					new_name
 			fi
-			if [ $editopt == norep ]; then
+			if [ $editopt == norep ]
+			then
 				norep "$new_name" "$parent_matcher" \
 					new_name
 			fi
-			if [ $editopt == trim ]; then
+			if [ $editopt == trim ]
+			then
 				trim "$new_name" "$parent_matcher" \
 					new_name
 			fi
 		done
 
-		# If --output-to option was given, build output directory
-		# pathname.
+		# If --output-to option was given, build output
+		# directory's pathname.
 		[ "$output_opt" ] && get_outputdir output_dir "$output_opt" \
 			"$file" ${pathnames[@]}
 		[ "$output_dir" ] && mkdir -p "$output_dir" && \
 		new_name="$output_dir"/"${new_name#$parent_matcher}"
 
 		# Rename file. Handle name conflicts.
-		if [ "$file" == "$new_name" ]; then
+		if [ "$file" == "$new_name" ]
+		then
 			parent_matcher=
 			continue
 		elif [ -e "$new_name" ]; then
