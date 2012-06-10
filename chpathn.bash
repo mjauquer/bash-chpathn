@@ -35,8 +35,6 @@ source ~/code/bash/chpathn/filetype/filetype.flib
 
 #===  FUNCTION =========================================================
 #
-#        NAME: usage
-#
 #       USAGE: usage
 #
 # DESCRIPTION: Print a help message to stdout.
@@ -87,8 +85,6 @@ usage () {
 }
 
 #===  FUNCTION =========================================================
-#
-#        NAME: error_exit
 #
 #       USAGE: error_exit [MESSAGE]
 #
