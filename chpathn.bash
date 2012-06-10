@@ -1,7 +1,5 @@
 #! /bin/bash
 
-#=======================================================================
-#
 # chpathn.bash (See description below).
 # Copyright (C) 2012  Marcelo Javier Auquer
 #
@@ -27,15 +25,12 @@
 #               argument.
 #        NOTES: Any suggestion is welcomed at auq..r@gmail.com (fill in
 #               the dots).
-#
 
 source ~/code/bash/chpathn/chpathn.flib
 source ~/code/bash/chpathn/getoptx/getoptx.bash
 source ~/code/bash/chpathn/filetype/filetype.flib
 
 #===  FUNCTION =========================================================
-#
-#        NAME: usage
 #
 #       USAGE: usage
 #
@@ -87,8 +82,6 @@ usage () {
 }
 
 #===  FUNCTION =========================================================
-#
-#        NAME: error_exit
 #
 #       USAGE: error_exit [MESSAGE]
 #

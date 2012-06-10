@@ -1,7 +1,5 @@
 #!/bin/bash
 
-#=======================================================================
-#
 # chpathn.flib <Functions for the chpathn.bash script.>
 # Copyright (C) 2012  Marcelo Javier Auquer
 #
@@ -22,13 +20,10 @@
 #         BUGS: --
 #        NOTES: Any suggestion is welcomed at auq..r@gmail.com (fill in
 #               the dots).
-#
 
 source ~/code/bash/chpathn/upvars/upvars.bash
 
 #===  FUNCTION =========================================================
-#
-#        NAME: asciivowels
 #
 #       USAGE: asciivowels PATHNAME PATTERN VARNAME
 #
@@ -75,7 +70,6 @@ asciivowels () {
 
 #===  FUNCTION =========================================================
 #
-#        NAME: noblank
 #       USAGE: noblank PATHNAME PATTERN VARNAME
 #
 # DESCRIPTION: Use the expanded value of PATTERN (the parent_matcher) to
@@ -100,8 +94,6 @@ noblank () {
 }
 
 #===  FUNCTION =========================================================
-#
-#        NAME: nospecial
 #
 #       USAGE: nospecial PATHNAME PATTERN VARNAME
 #
@@ -130,8 +122,6 @@ nospecial () {
 
 #===  FUNCTION =========================================================
 #
-#        NAME: nocntrl
-#
 #       USAGE: nocntrl PATHNAME PATTERN VARNAME
 #
 # DESCRIPTION: Use the expanded value of PATTERN (the parent_matcher) to
@@ -156,8 +146,6 @@ nocntrl () {
 }
 
 #===  FUNCTION =========================================================
-#
-#        NAME: norep
 #
 #       USAGE: norep PATHNAME PATTERN VARNAME
 #
@@ -186,8 +174,6 @@ norep () {
 }
 
 #===  FUNCTION =========================================================
-#
-#        NAME: portable
 #
 #       USAGE: portable PATHNAME PATTERN VARNAME
 #
@@ -244,8 +230,6 @@ portable () {
 
 #===  FUNCTION =========================================================
 #
-#        NAME: trim
-#
 #       USAGE: trim PATHNAME PATTERN VARNAME
 #
 # DESCRIPTION: Use the expanded value of PATTERN (the parent_matcher) to
@@ -274,8 +258,6 @@ trim () {
 
 #===  FUNCTION =========================================================
 #
-#        NAME: is_ancestor
-#
 #       USAGE: is_ancestor PATHNAME1 PATHNAME2
 #
 # DESCRIPTION: Consider PATHNAME1 and PATHNAME2 as the root directories
@@ -300,8 +282,6 @@ is_ancestor () {
 }
 
 #===  FUNCTION =========================================================
-#
-#        NAME: get_outputdir
 #
 #       USAGE: get_outputdir VARNAME STRING PATHNAME PATH...
 #
@@ -344,8 +324,6 @@ get_outputdir () {
 }
 
 #===  FUNCTION =========================================================
-#
-#        NAME: get_parentmatcher
 #
 #       USAGE: get_parentmatcher VARNAME PATHNAME
 #
