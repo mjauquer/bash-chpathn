@@ -22,15 +22,15 @@
 #
 #  DESCRIPTION: Change filenames in the operand directories.
 #
-# REQUIREMENTS: getoptx.bash, upvars.bash
+# REQUIREMENTS: chpathn.bash, getoptx.bash, upvars.bash
 #         BUGS: Pathnames with a leading dash can not be passed as an
 #               argument.
 #        NOTES: Any suggestion is welcomed at auq..r@gmail.com (fill in
 #               the dots).
 #
 
-source ~/code/bash/chpathn/getoptx/getoptx.bash
 source ~/code/bash/chpathn/chpathn.flib
+source ~/code/bash/chpathn/getoptx/getoptx.bash
 source ~/code/bash/chpathn/filetype/filetype.flib
 
 #===  FUNCTION =========================================================
@@ -86,78 +86,92 @@ usage () {
 	EOF
 }
 
+#===  FUNCTION =========================================================
+#
+#        NAME: error_exit
+#
+#       USAGE: error_exit [MESSAGE]
+#
+# DESCRIPTION: Function for exit due to fatal program error.
+#
+#   PARAMETER: MESSAGE An optional description of the error.
+#
+error_exit () {
+	echo "${PROGNAME}: ${1:-"Unknown Error"}" 1>&2
+	exit 1
+}
+
 #-----------------------------------------------------------------------
 # BEGINNING OF MAIN CODE
 #-----------------------------------------------------------------------
 
-OLD_LC_ALL=$LC_ALL
-LC_ALL=C
 shopt -s extglob
+LC_ALL=C
+PROGNAME=$(basename $0)
 
 # Parse command line options.
-find_opts[0]="-maxdepth 1"
-editoptind=0
-findtestind=0
+declare -a FIND_OPTS; FIND_OPTS=("-maxdepth 1")
+declare -a EDIT_OPTS
+declare -i EDIT_IND=0
+declare -a FIND_TESTS
+declare -i FTESTS_IND=0
 while getoptex "ascii-vowels ftype: h help noblank nocontrol norep p portable output-to: r recursive R nospecial trim type:" "$@"
 do
 	case "$OPTOPT" in
-		ascii-vowels) editopts[$editoptind]=ascii-vowels
-		              editoptind=$((${editoptind}+1))
+		ascii-vowels) EDIT_OPTS[((EDIT_IND++))]=ascii-vowels
 		              ;;
-		ftype)        if [ "$OPTARG" == image ]; then
-			              ftype="image"
+		ftype)        if [ "$OPTARG" == image ]
+		              then
+			              FTYPE="image"
 			      fi
-		              if [ "$OPTARG" == text ]; then
-			              ftype="text"
+		              if [ "$OPTARG" == text ]
+			      then
+			              FTYPE="text"
 			      fi
 		              ;;
-		noblank)      editopts[$editoptind]=noblank
-		              editoptind=$((${editoptind}+1))
+		noblank)      EDIT_OPTS[((EDIT_IND++))]=noblank
 		              ;;
-		nocontrol)    editopts[$editoptind]=nocontrol
-		              editoptind=$((${editoptind}+1))
+		nocontrol)    EDIT_OPTS[((EDIT_IND++))]=nocontrol
 		              ;;
-		norep)        editopts[$editoptind]=norep
-		              editoptind=$((${editoptind}+1))
+		norep)        EDIT_OPTS[((EDIT_IND++))]=norep
 		              ;;
-		output-to)    output_opt="$OPTARG"
+		output-to)    OUTPUT="$OPTARG"
 			      ;;
-		h)            editopts[$editoptind]=h
-		              editoptind=$((${editoptind}+1))
+		h)            EDIT_OPTS[((EDIT_IND++))]=h
 		              ;;
-		help)         editopts[$editoptind]=help
-		              editoptind=$((${editoptind}+1))
+		help)         EDIT_OPTS[((EDIT_IND++))]=help
 		              ;;
-		p)            editopts[$editoptind]=portable
-		              editoptind=$((${editoptind}+1))
+		p)            EDIT_OPTS[((EDIT_IND++))]=portable
 		              ;;
-		portable)     editopts[$editoptind]=portable
-		              editoptind=$((${editoptind}+1))
+		portable)     EDIT_OPTS[((EDIT_IND++))]=portable
 		              ;;
-		r)            find_opts[0]="-depth"
+		r)            FIND_OPTS[0]="-depth"
 			      ;;
-		recursive)    find_opts[0]="-depth"
+		recursive)    FIND_OPTS[0]="-depth"
 		              ;;
-		R)            find_opts[0]="-depth"
+		R)            FIND_OPTS[0]="-depth"
 		              ;;
-		nospecial)    editopts[$editoptind]=s
-		              editoptind=$((${editoptind}+1))
+		nospecial)    EDIT_OPTS[((EDIT_IND++))]=s
 		              ;;
-		trim)         editopts[$editoptind]=trim
-		              editoptind=$((${editoptind}+1))
+		trim)         EDIT_OPTS[((EDIT_IND++))]=trim
 		              ;;
-		type)         [[ ! $OPTARG =~ [bcdpflsD] ]] && continue
-			      find_tests[$findtestind]="-type $OPTARG"
-		              findtestind=$((${findtestind}+1))
+		type)         TYPE="$OPTARG"
+			      if [[ ! $TYPE =~ [bcdpflsD] ]]
+			      then
+				     error_exit "$LINENO: Wrong argument in option --type." 
+			      fi
+		              FIND_TESTS[((FTESTS_IND++))]="-type $TYPE"
 			      ;;
 	esac
 done
 shift $(($OPTIND-1))
 
-# Check for command line correctness.
+# Check command line's sintax
 [[ $# -eq 0 ]] && usage && exit
+[[ ! $TYPE ]] && [[ ! $FTYPE ]] && [[ $OUTPUT ]] &&
+	error_exit "$LINENO: Either --type or --ftype option must be given with option --output-to."
 
-# Build the find command.
+# Build find command.
 for arg
 do
 	cd "$arg"
@@ -165,20 +179,20 @@ do
 	then
 		exit 1
 	fi
-	find . $find_opts $find_tests -print0 |
+	find . $FIND_OPTS $FIND_TESTS -print0 |
 	while IFS="" read -r -d "" file
 	do
 		IFS="$(printf '\n\t')"
 
-		# Some files to be skipped.
+		# Files to be skipped.
 		[[ "$file" == . ]] && continue
 		[[ ! -a "$file" ]] && continue
-		if [ "$ftype" == "image" ]
+		if [ "$FTYPE" == "image" ]
 		then
 			is_image image "$file"
 			[[ $image == true ]] || continue
 		fi
-		if [ "$ftype" == "text" ]
+		if [ "$FTYPE" == "text" ]
 		then
 			is_text text "$file"
 			[[ $text == true ]] || continue
@@ -188,7 +202,7 @@ do
 		get_parentmatcher parent_matcher "$file"
 		
 		# Call editing functions on the current filename.
-		for editopt in "${editopts[@]}"
+		for editopt in "${EDIT_OPTS[@]}"
 		do
 			if [ $editopt == ascii-vowels ]
 			then
@@ -233,8 +247,8 @@ do
 
 		# If --output-to option was given, build output
 		# directory's pathname.
-		[ "$output_opt" ] && get_outputdir output_dir "$output_opt" \
-			"$file" ${pathnames[@]}
+		[ "$OUTPUT" ] && get_outputdir output_dir "$OUTPUT" \
+			"$file" "$@"
 		[ "$output_dir" ] && mkdir -p "$output_dir" && \
 		new_name="$output_dir"/"${new_name#$parent_matcher}"
 
@@ -243,8 +257,9 @@ do
 		then
 			parent_matcher=
 			continue
-		elif [ -e "$new_name" ]; then
-			echo "Error: file $new_name already exists." 2>&1
+		elif [ -e "$new_name" ]
+		then
+			error_exit "$LINENO: File $new_name already exists"
 		else
 			mv "$file" "$new_name"
 		fi
@@ -252,5 +267,3 @@ do
 	done
 	cd "$OLDPWD"
 done
-LC_ALL=$OLDLC_ALL
-IFS=$OLD_IFS

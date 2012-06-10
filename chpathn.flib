@@ -285,7 +285,6 @@ trim () {
 #  PARAMETERS: PATHNAME1 (A string representing a unix pathname).
 #              PATHNAME2 (A string representing a unix pathname).
 #
-#=======================================================================
 is_ancestor () {
 	OLD_IFS=$IFS
 	IFS="$(printf '\n\t')"
@@ -312,7 +311,7 @@ is_ancestor () {
 #              being unix filesystem formated pathnames. Find out which
 #              of the pathnames listed in PATH... is an ancestor of
 #              PATHNAME. Build a pathname string whose prefix is the
-#              founded pathname ancestor and whose suffix is STRING.
+#              found pathname ancestor and whose suffix is STRING.
 #              Assign the resulting string to the caller's variable
 #              VARNAME. 
 #
@@ -323,7 +322,6 @@ is_ancestor () {
 #              PATH...  (A listing of unix filesystem formated
 #                        pathnames).
 #
-#=======================================================================
 get_outputdir () {
 	{
 		[[ "$#" -lt 4 ]] && cat <<- EOF
@@ -338,7 +336,7 @@ get_outputdir () {
 	[[ ! "$output_opt" =~ /.* ]] && 
 		for path in "$@"; do
 			if is_ancestor "$path" "$pathname"; then
-				output="$path"/"$output_opt"
+				output="$path""$output_opt"
 				break
 			fi
 		done
@@ -361,7 +359,6 @@ get_outputdir () {
 #                        caller's scope).
 #              PATHNAME (A string representing a unix pathname).
 #
-#=======================================================================
 get_parentmatcher () {
 	{
 		[[ "$#" -ne 2 ]] && cat <<- EOF
