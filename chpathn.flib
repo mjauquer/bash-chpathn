@@ -22,6 +22,7 @@
 #               the dots).
 
 source ~/code/bash/chpathn/upvars/upvars.bash
+source ~/code/bash/chpathn/pathname/pathname.flib
 
 #===  FUNCTION =========================================================
 #
@@ -254,31 +255,6 @@ trim () {
 	suffix="${suffix##+([-[[:space:]])}"
 	suffix="${suffix%%+([[:space:]])}"
 	local $3 && upvar $3 "$prefix$suffix"
-}
-
-#===  FUNCTION =========================================================
-#
-#       USAGE: is_ancestor PATHNAME1 PATHNAME2
-#
-# DESCRIPTION: Consider PATHNAME1 and PATHNAME2 as the root directories
-#              of two unix filesystem hierararchy trees, T1 and T2.
-#              Return 0 if T2 is a subtree of T1.
-#
-#  PARAMETERS: PATHNAME1 (A string representing a unix pathname).
-#              PATHNAME2 (A string representing a unix pathname).
-#
-is_ancestor () {
-	OLD_IFS=$IFS
-	IFS="$(printf '\n\t')"
-	{
-		[[ "$#" -ne 2 ]] && cat <<- EOF
-		Error: function is_ancestor requires two arguments.
-		EOF
-	} && exit 1
-	local pathname1="$(readlink -f "$1")"
-	local pathname2="$(readlink -f "$2")"
-	([[ "$pathname2" =~ ${pathname1}/.* ]] && return 0) || return 1
-	IFS=$OLD_IFS
 }
 
 #===  FUNCTION =========================================================
