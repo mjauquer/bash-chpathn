@@ -174,7 +174,6 @@ do
 		IFS="$(printf '\n\t')"
 
 		# Files to be skipped.
-		[[ "$file" == . ]] && continue
 		[[ ! -a "$file" ]] && continue
 		if [ "$FTYPE" == "image" ]
 		then
@@ -204,7 +203,18 @@ do
 					new_name
 			fi
 			if [ $editopt == nocontrol ]
-			then nocntrl "$new_name" "$parent_matcher" \ new_name fi if [ $editopt == nospecial ] then nospecial "$new_name" "$parent_matcher" \ new_name fi if [ $editopt == help ] then usage
+			then 
+				nocntrl "$new_name" "$parent_matcher" \ 
+				new_name
+			fi
+			if [ $editopt == nospecial ]
+			then
+				nospecial "$new_name" "$parent_matcher" \
+				new_name
+			fi
+			if [ $editopt == help ]
+			then
+				usage
 			fi
 			if [ $editopt == portable ]
 			then
