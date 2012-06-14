@@ -40,8 +40,7 @@ usage () {
 	cat <<- EOF
 	Usage: chpathn.sh [OPTIONS] PATH...
 	
-	Change the name of files and subdirectories of the directories
-	listed in PATH...
+	Change the pathnames of files and directories listed in PATH...
 
 	--ascii-vowels Replace non-ascii vowels with ascii ones.
 	 -h
@@ -103,7 +102,6 @@ LC_ALL=C
 PROGNAME=$(basename $0)
 
 # Parse command line options.
-declare -a FIND_OPTS; FIND_OPTS=("-maxdepth 1")
 declare -a EDIT_OPTS
 declare -i EDIT_IND=0
 declare -a FIND_TESTS
@@ -138,11 +136,11 @@ do
 		              ;;
 		portable)     EDIT_OPTS[((EDIT_IND++))]=portable
 		              ;;
-		r)            FIND_OPTS[0]="-depth"
+		r)            RECURSIVE=true
 			      ;;
-		recursive)    FIND_OPTS[0]="-depth"
+		recursive)    RECURSIVE=true
 		              ;;
-		R)            FIND_OPTS[0]="-depth"
+		R)            RECURSIVE=true
 		              ;;
 		nospecial)    EDIT_OPTS[((EDIT_IND++))]=s
 		              ;;
@@ -164,189 +162,201 @@ shift $(($OPTIND-1))
 [[ ! $TYPE ]] && [[ ! $FTYPE ]] && [[ $OUTPUT ]] &&
 	error_exit "$LINENO: Either --type or --ftype option must be given with option --output-to."
 
-# Build find command.
+# Store the inodes of the directories passed as arguments for subsequent
+# use.
+declare -a INODES
+declare -a TYPE_FILE # "d" for directories, "f" for regular files.
 for arg
 do
-	if [ -f "$arg" ]
-	then
-		file=$(readlink -f "$arg")
-		OLDIFS=$IFS
-		IFS="$(printf '\n\t')"
-
-		# Files to be skipped.
-		[[ ! -a "$file" ]] && continue
-		if [ "$FTYPE" == "image" ]
-		then
-			is_image image "$file"
-			[[ $image == true ]] || continue
-		fi
-		if [ "$FTYPE" == "text" ]
-		then
-			is_text text "$file"
-			[[ $text == true ]] || continue
-		fi
-
-		new_name=$file
-		get_parentmatcher parent_matcher "$file"
-		
-		# Call editing functions on the current filename.
-		for editopt in "${EDIT_OPTS[@]}"
-		do
-			if [ $editopt == ascii-vowels ]
-			then
-				asciivowels "$new_name" "$parent_matcher" \
-					new_name
-			fi
-			if [ $editopt == noblank ]
-			then
-				noblank "$new_name" "$parent_matcher" \
-					new_name
-			fi
-			if [ $editopt == nocontrol ]
-			then 
-				nocntrl "$new_name" "$parent_matcher" \ 
-				new_name
-			fi
-			if [ $editopt == nospecial ]
-			then
-				nospecial "$new_name" "$parent_matcher" \
-				new_name
-			fi
-			if [ $editopt == help ]
-			then
-				usage
-			fi
-			if [ $editopt == portable ]
-			then
-				portable "$new_name" "$parent_matcher" \
-					new_name
-			fi
-			if [ $editopt == norep ]
-			then
-				norep "$new_name" "$parent_matcher" \
-					new_name
-			fi
-			if [ $editopt == trim ]
-			then
-				trim "$new_name" "$parent_matcher" \
-					new_name
-			fi
-		done
-
-		# If --output-to option was given, build output
-		# directory's pathname.
-		[ "$OUTPUT" ] && get_outputdir output_dir "$OUTPUT" \
-			"$file" "$@"
-		[ "$output_dir" ] && mkdir -p "$output_dir" && \
-		new_name="$output_dir"/"${new_name#$parent_matcher}"
-
-		# Rename file. Handle name conflicts.
-		if [ "$file" == "$new_name" ]
-		then
-			parent_matcher=
-			continue
-		elif [ -e "$new_name" ]
-		then
-			error_exit "$LINENO: File $new_name already exists"
-		else
-			mv "$file" "$new_name"
-		fi
-		parent_matcher=
-		IFS=$OLDIFS
-	fi
 	if [ -d "$arg" ]
 	then
-		cd "$arg"
-		if [ $? -ne 0 ]
-		then
-			exit 1
-		fi
-		find . $FIND_OPTS $FIND_TESTS -print0 |
-		while IFS="" read -r -d "" file
-		do
-			IFS="$(printf '\n\t')"
-
-			# Files to be skipped.
-			[[ "$file" == . ]] && continue
-			[[ ! -a "$file" ]] && continue
-			if [ "$FTYPE" == "image" ]
-			then
-				is_image image "$file"
-				[[ $image == true ]] || continue
-			fi
-			if [ "$FTYPE" == "text" ]
-			then
-				is_text text "$file"
-				[[ $text == true ]] || continue
-			fi
-
-			new_name=$file
-			get_parentmatcher parent_matcher "$file"
-			
-			# Call editing functions on the current filename.
-			for editopt in "${EDIT_OPTS[@]}"
-			do
-				if [ $editopt == ascii-vowels ]
-				then
-					asciivowels "$new_name" "$parent_matcher" \
-						new_name
-				fi
-				if [ $editopt == noblank ]
-				then
-					noblank "$new_name" "$parent_matcher" \
-						new_name
-				fi
-				if [ $editopt == nocontrol ]
-				then
-					nocntrl "$new_name" "$parent_matcher" \
-						new_name
-				fi
-				if [ $editopt == nospecial ]
-				then
-					nospecial "$new_name" "$parent_matcher" \
-						new_name
-				fi
-				if [ $editopt == help ]
-				then
-					usage
-				fi
-				if [ $editopt == portable ]
-				then
-					portable "$new_name" "$parent_matcher" \
-						new_name
-				fi
-				if [ $editopt == norep ]
-				then
-					norep "$new_name" "$parent_matcher" \
-						new_name
-				fi
-				if [ $editopt == trim ]
-				then
-					trim "$new_name" "$parent_matcher" \
-						new_name
-				fi
-			done
-
-			# If --output-to option was given, build output
-			# directory's pathname.
-			[ "$OUTPUT" ] && get_outputdir output_dir "$OUTPUT" \
-				"$file" "$@"
-			[ "$output_dir" ] && mkdir -p "$output_dir" && \
-			new_name="$output_dir"/"${new_name#$parent_matcher}"
-
-			# Rename file. Handle name conflicts.
-			if [ "$file" == "$new_name" ]
-			then
-				parent_matcher=
-				continue
-			elif [ -e "$new_name" ]
-			then
-				error_exit "$LINENO: File $new_name already exists"
-			else
-				mv "$file" "$new_name"
-			fi
-			parent_matcher=
-		done
-		cd "$OLDPWD"
+		TYPE_FILE+=( d )
+		INODES+=($(stat -c %i "$arg"))
+	elif [ -f "$arg" ]
+	then
+		TYPE_FILE+=( f )
+		INODES+=($(stat -c %i "$arg"))
 	fi
+done
+
+# First, change pathnames of the pathnames passed as arguments.
+for arg
+do
+	file="$(readlink -f "$arg")"
+	OLDIFS=$IFS
+	IFS="$(printf '\n\t')"
+
+	# Files to be skipped.
+	[[ ! -a "$file" ]] && continue
+	if [ "$FTYPE" == "image" ]
+	then
+		is_image image "$file"
+		[[ $image == true ]] || continue
+	fi
+	if [ "$FTYPE" == "text" ]
+	then
+		is_text text "$file"
+		[[ $text == true ]] || continue
+	fi
+
+	new_name=$file
+	get_parentmatcher parent_matcher "$file"
+	
+	# Call editing functions on the current filename.
+	for editopt in "${EDIT_OPTS[@]}"
+	do
+		if [ $editopt == ascii-vowels ]
+		then
+			asciivowels "$new_name" "$parent_matcher" \
+				new_name
+		fi
+		if [ $editopt == noblank ]
+		then
+			noblank "$new_name" "$parent_matcher" \
+				new_name
+		fi
+		if [ $editopt == nocontrol ]
+		then 
+			nocntrl "$new_name" "$parent_matcher" \ 
+			new_name
+		fi
+		if [ $editopt == nospecial ]
+		then
+			nospecial "$new_name" "$parent_matcher" \
+			new_name
+		fi
+		if [ $editopt == help ]
+		then
+			usage
+		fi
+		if [ $editopt == portable ]
+		then
+			portable "$new_name" "$parent_matcher" \
+				new_name
+		fi
+		if [ $editopt == norep ]
+		then
+			norep "$new_name" "$parent_matcher" \
+				new_name
+		fi
+		if [ $editopt == trim ]
+		then
+			trim "$new_name" "$parent_matcher" \
+				new_name
+		fi
+	done
+
+	# Rename file. Handle name conflicts.
+	if [ "$file" == "$new_name" ]
+	then
+		parent_matcher=
+		continue
+	elif [ -e "$new_name" ]
+	then
+		error_exit "$LINENO: File $new_name already exists"
+	else
+		mv "$file" "$new_name"
+	fi
+	parent_matcher=
+	IFS=$OLDIFS
+done
+
+# If recursive is not set, exit succesfully
+[[ ! $RECURSIVE ]] && exit 0 
+
+# Find the new pathname of directories passed as arguments.
+declare -a DIRS
+for (( i=0; i<${#INODES[@]}; i++ )) 
+do
+	if [ ${TYPE_FILE[i]} == d ]
+	then
+		DIRS+=( "$(find /home/marce -depth -inum ${INODES[i]} -type d)" )
+	fi
+done
+
+# Process recursively every directory passed as argument.
+find ${DIRS[@]} $FIND_TESTS -depth -print0 |
+while IFS="" read -r -d "" file
+do
+	IFS="$(printf '\n\t')"
+
+# Files to be skipped.
+	[[ ! -a "$file" ]] && continue
+	if [ "$FTYPE" == "image" ]
+	then
+		is_image image "$file"
+		[[ $image == true ]] || continue
+	fi
+	if [ "$FTYPE" == "text" ]
+	then
+		is_text text "$file"
+		[[ $text == true ]] || continue
+	fi
+
+	new_name=$file
+	get_parentmatcher parent_matcher "$file"
+	
+	# Call editing functions on the current filename.
+	for editopt in "${EDIT_OPTS[@]}"
+	do
+		if [ $editopt == ascii-vowels ]
+		then
+			asciivowels "$new_name" "$parent_matcher" \
+				new_name
+		fi
+		if [ $editopt == noblank ]
+		then
+			noblank "$new_name" "$parent_matcher" \
+				new_name
+		fi
+		if [ $editopt == nocontrol ]
+		then
+			nocntrl "$new_name" "$parent_matcher" \
+				new_name
+		fi
+		if [ $editopt == nospecial ]
+		then
+			nospecial "$new_name" "$parent_matcher" \
+				new_name
+		fi
+		if [ $editopt == help ]
+		then
+			usage
+		fi
+		if [ $editopt == portable ]
+		then
+			portable "$new_name" "$parent_matcher" \
+				new_name
+		fi
+		if [ $editopt == norep ]
+		then
+			norep "$new_name" "$parent_matcher" \
+				new_name
+		fi
+		if [ $editopt == trim ]
+		then
+			trim "$new_name" "$parent_matcher" \
+				new_name
+		fi
+	done
+
+	# If --output-to option was given, build output directory
+	# pathname.
+	[ "$OUTPUT" ] && get_outputdir output_dir "$OUTPUT" \
+		"$file" ${DIRS[@]}
+	[ "$output_dir" ] && mkdir -p "$output_dir" && \
+	new_name="$output_dir"/"${new_name#$parent_matcher}"
+
+	# Rename file. Handle name conflicts.
+	if [ "$file" == "$new_name" ]
+	then
+		parent_matcher=
+		continue
+	elif [ -e "$new_name" ]
+	then
+		error_exit "$LINENO: File $new_name already exists"
+	else
+		mv "$file" "$new_name"
+	fi
+	parent_matcher=
 done

@@ -292,7 +292,7 @@ get_outputdir () {
 	[[ ! "$output_opt" =~ /.* ]] && 
 		for path in "$@"; do
 			if is_ancestor "$path" "$pathname"; then
-				output="$path""$output_opt"
+				output="$path"/"$output_opt"
 				break
 			fi
 		done
