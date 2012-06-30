@@ -274,6 +274,9 @@ do
 	fi
 done
 
+# If there is not directories, exit succesfully.
+[[ ${#DIRS[@]} == 0 ]] && exit 0
+
 # Process recursively every directory passed as argument.
 find ${DIRS[@]} $FIND_TESTS -depth -print0 |
 while IFS="" read -r -d "" file
