@@ -89,7 +89,7 @@ usage () {
 #   PARAMETER: MESSAGE An optional description of the error.
 #
 error_exit () {
-	echo "${PROGNAME}: ${1:-"Unknown Error"}" 1>&2
+	echo "${progname}: ${1:-"Unknown Error"}" 1>&2
 	exit 1
 }
 
@@ -99,59 +99,59 @@ error_exit () {
 
 shopt -s extglob
 LC_ALL=C
-PROGNAME=$(basename $0)
+progname=$(basename $0)
 
 # Parse command line options.
-declare -a EDIT_OPTS
-declare -i EDIT_IND=0
-declare -a FIND_TESTS
-declare -i FTESTS_IND=0
+declare -a edit_opts
+declare -i edit_ind=0
+declare -a find_tests
+declare -i ftests_ind=0
 while getoptex "ascii-vowels ftype: h help noblank nocontrol norep p portable output-to: r recursive R nospecial trim type:" "$@"
 do
 	case "$OPTOPT" in
-		ascii-vowels) EDIT_OPTS[((EDIT_IND++))]=ascii-vowels
+		ascii-vowels) edit_opts[((edit_ind++))]=ascii-vowels
 		              ;;
 		ftype)        if [ "$OPTARG" == image ]
 		              then
-			              FTYPE="image"
+			              ftype="image"
 			      fi
 		              if [ "$OPTARG" == text ]
 			      then
-			              FTYPE="text"
+			              ftype="text"
 			      fi
 		              ;;
-		noblank)      EDIT_OPTS[((EDIT_IND++))]=noblank
+		noblank)      edit_opts[((edit_ind++))]=noblank
 		              ;;
-		nocontrol)    EDIT_OPTS[((EDIT_IND++))]=nocontrol
+		nocontrol)    edit_opts[((edit_ind++))]=nocontrol
 		              ;;
-		norep)        EDIT_OPTS[((EDIT_IND++))]=norep
+		norep)        edit_opts[((edit_ind++))]=norep
 		              ;;
-		output-to)    OUTPUT="$OPTARG"
+		output-to)    output="$OPTARG"
 			      ;;
-		h)            EDIT_OPTS[((EDIT_IND++))]=h
+		h)            edit_opts[((edit_ind++))]=h
 		              ;;
-		help)         EDIT_OPTS[((EDIT_IND++))]=help
+		help)         edit_opts[((edit_ind++))]=help
 		              ;;
-		p)            EDIT_OPTS[((EDIT_IND++))]=portable
+		p)            edit_opts[((edit_ind++))]=portable
 		              ;;
-		portable)     EDIT_OPTS[((EDIT_IND++))]=portable
+		portable)     edit_opts[((edit_ind++))]=portable
 		              ;;
-		r)            RECURSIVE=true
+		r)            recursive=true
 			      ;;
-		recursive)    RECURSIVE=true
+		recursive)    recursive=true
 		              ;;
-		R)            RECURSIVE=true
+		R)            recursive=true
 		              ;;
-		nospecial)    EDIT_OPTS[((EDIT_IND++))]=s
+		nospecial)    edit_opts[((edit_ind++))]=s
 		              ;;
-		trim)         EDIT_OPTS[((EDIT_IND++))]=trim
+		trim)         edit_opts[((edit_ind++))]=trim
 		              ;;
-		type)         TYPE="$OPTARG"
-			      if [[ ! $TYPE =~ [bcdpflsD] ]]
+		type)         type="$OPTARG"
+			      if [[ ! $type =~ [bcdpflsD] ]]
 			      then
 				     error_exit "$LINENO: Wrong argument in option --type." 
 			      fi
-		              FIND_TESTS[((FTESTS_IND++))]="-type $TYPE"
+		              find_tests[((ftests_ind++))]="-type $type"
 			      ;;
 	esac
 done
@@ -159,23 +159,23 @@ shift $(($OPTIND-1))
 
 # Check command line's sintax
 [[ $# -eq 0 ]] && usage && exit
-[[ ! $TYPE ]] && [[ ! $FTYPE ]] && [[ $OUTPUT ]] &&
+[[ ! $type ]] && [[ ! $ftype ]] && [[ $output ]] &&
 	error_exit "$LINENO: Either --type or --ftype option must be given with option --output-to."
 
 # Store the inodes of the directories passed as arguments for subsequent
 # use.
-declare -a INODES
-declare -a TYPE_FILE # "d" for directories, "f" for regular files.
+declare -a inodes
+declare -a type_file # "d" for directories, "f" for regular files.
 for arg
 do
 	if [ -d "$arg" ]
 	then
-		TYPE_FILE+=( d )
-		INODES+=($(stat -c %i "$arg"))
+		type_file+=( d )
+		inodes+=($(stat -c %i "$arg"))
 	elif [ -f "$arg" ]
 	then
-		TYPE_FILE+=( f )
-		INODES+=($(stat -c %i "$arg"))
+		type_file+=( f )
+		inodes+=($(stat -c %i "$arg"))
 	fi
 done
 
@@ -183,17 +183,17 @@ done
 for arg
 do
 	file="$(readlink -f "$arg")"
-	OLDIFS=$IFS
+	oldifs=$IFS
 	IFS="$(printf '\n\t')"
 
 	# Files to be skipped.
 	[[ ! -a "$file" ]] && continue
-	if [ "$FTYPE" == "image" ]
+	if [ "$ftype" == "image" ]
 	then
 		is_image image "$file"
 		[[ $image == true ]] || continue
 	fi
-	if [ "$FTYPE" == "text" ]
+	if [ "$ftype" == "text" ]
 	then
 		is_text text "$file"
 		[[ $text == true ]] || continue
@@ -203,7 +203,7 @@ do
 	get_parentmatcher parent_matcher "$file"
 	
 	# Call editing functions on the current filename.
-	for editopt in "${EDIT_OPTS[@]}"
+	for editopt in "${edit_opts[@]}"
 	do
 		if [ $editopt == ascii-vowels ]
 		then
@@ -258,39 +258,39 @@ do
 		mv "$file" "$new_name"
 	fi
 	parent_matcher=
-	IFS=$OLDIFS
+	IFS=$oldifs
 done
 
 # If recursive is not set, exit succesfully
-[[ ! $RECURSIVE ]] && exit 0 
+[[ ! $recursive ]] && exit 0 
 
 # Find the new pathname of directories passed as arguments.
-declare -a DIRS
-for (( i=0; i<${#INODES[@]}; i++ )) 
+declare -a dirs
+for (( i=0; i<${#inodes[@]}; i++ )) 
 do
-	if [ ${TYPE_FILE[i]} == d ]
+	if [ ${type_file[i]} == d ]
 	then
-		DIRS+=( "$(find /home/marce -depth -inum ${INODES[i]} -type d)" )
+		dirs+=( "$(find /home/marce -depth -inum ${inodes[i]} -type d)" )
 	fi
 done
 
 # If there is not directories, exit succesfully.
-[[ ${#DIRS[@]} == 0 ]] && exit 0
+[[ ${#dirs[@]} == 0 ]] && exit 0
 
 # Process recursively every directory passed as argument.
-find ${DIRS[@]} $FIND_TESTS -depth -print0 |
+find ${dirs[@]} $find_tests -depth -print0 |
 while IFS="" read -r -d "" file
 do
 	IFS="$(printf '\n\t')"
 
 # Files to be skipped.
 	[[ ! -a "$file" ]] && continue
-	if [ "$FTYPE" == "image" ]
+	if [ "$ftype" == "image" ]
 	then
 		is_image image "$file"
 		[[ $image == true ]] || continue
 	fi
-	if [ "$FTYPE" == "text" ]
+	if [ "$ftype" == "text" ]
 	then
 		is_text text "$file"
 		[[ $text == true ]] || continue
@@ -300,7 +300,7 @@ do
 	get_parentmatcher parent_matcher "$file"
 	
 	# Call editing functions on the current filename.
-	for editopt in "${EDIT_OPTS[@]}"
+	for editopt in "${edit_opts[@]}"
 	do
 		if [ $editopt == ascii-vowels ]
 		then
@@ -345,8 +345,8 @@ do
 
 	# If --output-to option was given, build output directory
 	# pathname.
-	[ "$OUTPUT" ] && get_outputdir output_dir "$OUTPUT" \
-		"$file" ${DIRS[@]}
+	[ "$output" ] && get_outputdir output_dir "$output" \
+		"$file" ${dirs[@]}
 	[ "$output_dir" ] && mkdir -p "$output_dir" && \
 	new_name="$output_dir"/"${new_name#$parent_matcher}"
 
