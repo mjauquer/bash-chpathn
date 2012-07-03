@@ -280,9 +280,9 @@ trim () {
 #
 get_outputdir () {
 	{
-		[[ "$#" -lt 4 ]] && cat <<- EOF
-		Error: function get_outputdir requires at least four arguments.
-		EOF
+	[[ "$#" -lt 4 ]] && cat <<- EOF
+	Error: function get_outputdir requires at least four arguments.
+	EOF
 	} && exit 1
 	local output_dir="$1"
 	local output_opt="$2"
@@ -290,8 +290,10 @@ get_outputdir () {
 	shift 3
 	[[ "$output_opt" =~ /.* ]] && local output=$output_opt
 	[[ ! "$output_opt" =~ /.* ]] && 
-		for path in "$@"; do
-			if is_ancestor "$path" "$pathname"; then
+		for path in "$@"
+		do
+			if is_ancestor "$path" "$pathname"
+			then
 				output="$path"/"$output_opt"
 				break
 			fi
@@ -309,52 +311,58 @@ get_outputdir () {
 #              PATHNAME's parent directory. Assign the resulting pattern
 #              to the caller's variable VARNAME.
 #
-#  PARAMETERS: VARNAME  (A string representing a variable name inside the
-#                        caller's scope).
-#              PATHNAME (A string representing a unix pathname).
+#  PARAMETERS: VARNAME  A string representing a variable name inside the
+#                       caller's scope.
+#              PATHNAME A string representing a unix pathname.
 #
 get_parentmatcher () {
 	{
-		[[ "$#" -ne 2 ]] && cat <<- EOF
-		Error: function get_parentmatcher requires one argument.
-		EOF
-	} && exit 1
-	local parent_matcher=
-	local file="$2"
-	slashes="${file//[^\/]}"
-	depth=${#slashes}	
-	
-	#--------------------------------------------------------------
-	# Check for error in pathname (all slashes?)
-	#--------------------------------------------------------------
+	[[ "$#" -ne 2 ]] && cat <<- EOF
+	Error: function get_parentmatcher requires two arguments.
+	EOF
+	} && return 1
+	local pattern
+	local slashes="${2//[^\/]}"
+	local depth=${#slashes}	
 
-	if [ ${#file} -eq ${#slashes} ]; then
-		echo "Error: file $file skipped." 2>&1
-		parent_matcher=
-		continue
-	fi
-	
-	#--------------------------------------------------------------
 	# Build the pattern matcher.
-	#--------------------------------------------------------------
-
-	# Is an absolute path?
-	if [[ $file =~ ^/.* ]]
+	if [[ $2 =~ ^/.* ]] # Is an absolute path?
 	then
-		parent_matcher="/"
+		pattern="/"
 		depth=$(($depth-1))
 		subdir_matcher="[^/]*/"
-		while [ $depth -ne 0 ]; do
-			parent_matcher="$parent_matcher$subdir_matcher"
+		while [ $depth -ne 0 ]
+		do
+			pattern="$pattern$subdir_matcher"
 			depth=$(($depth-1))
 		done
-		local $1 && upvar $1 $parent_matcher
+		local $1 && upvar $1 $pattern
 	else
 		subdir_matcher="[^/]*/"
-		while [ $depth -ne 0 ]; do
-			parent_matcher="$parent_matcher$subdir_matcher"
+		while [ $depth -ne 0 ]
+		do
+			pattern="$pattern$subdir_matcher"
 			depth=$(($depth-1))
 		done
-		local $1 && upvar $1 $parent_matcher
+		local $1 && upvar $1 $pattern
 	fi
+}
+
+#===  FUNCTION =========================================================
+#
+#       USAGE: read_topdirs VARNAME LOG
+#
+# DESCRIPTION: Read the LOG and make a list of the directories where to
+#              find the files and directories processed in the
+#              corresponding session of the chpathn script. Store that
+#              list in the caller's variable VARNAME.
+#
+#  PARAMETERS: VARNAME  A string representing a variable name inside the
+#                       caller's scope.
+#              LOG      An array containing the output of the chpathn
+#                       script when the option --verbose was given.
+#
+read_topdirs () {
+	local -a log=(${@:2})
+	local $1 && upvars -a${#log[@]} $1 ${log[@]}
 }

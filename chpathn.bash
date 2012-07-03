@@ -21,8 +21,7 @@
 #  DESCRIPTION: Change filenames in the operand directories.
 #
 # REQUIREMENTS: chpathn.bash, getoptx.bash, upvars.bash
-#         BUGS: Pathnames with a leading dash can not be passed as an
-#               argument.
+#
 #        NOTES: Any suggestion is welcomed at auq..r@gmail.com (fill in
 #               the dots).
 
@@ -48,6 +47,9 @@ usage () {
 	                 text
 	--find-tests   Argument required and may be any number of tests
 	               of the find command.
+	--get-topdirs  Argument required and must be a variable name of
+                       array type in the caller's scope. Useful when
+		       called from another script.
 	 -h
 	--help         Display this help.
 	--noblank      Replace blank characters with underscores.
@@ -93,12 +95,12 @@ error_exit () {
 #              passed to this script. Store "true" or "false" in the
 #              caller's variable VARNAME.
 #
-#   PARAMETER: VARNAME  A caller's variable.
+#   PARAMETER: VARNAME  A variable in caller's scope.
 #              PATHNAME A pathname pointing to a file or directory
 #                       passed as an argument to this script.
 #
 must_be_skipped () {
-	old_ifs=$IFS
+	local old_ifs=$IFS
 	IFS="$(printf '\n\t')"
 	local answer # The answer to be returned.
 	local image  # The answer returned by is_image().
@@ -115,8 +117,8 @@ must_be_skipped () {
 		*)     error_exit "$LINENO: Wrong argument passed to the --ftype option."
 		       ;;
 	esac
-	IFS=$old_ifs
 	local $1 && upvar $1 $answer
+	IFS=$old_ifs
 }
 
 #===  FUNCTION =========================================================
@@ -131,36 +133,29 @@ must_be_skipped () {
 #                       passed as an argument to this script.
 #
 edit () {
-	local pathname="$2"
-	local parent_pattern
-	get_parentmatcher parent_pattern "$pathname"
-	old_ifs=$IFS
+	local old_ifs=$IFS
+	local name="$2"
+	local pattern
+	get_parentmatcher pattern "$name"
 	IFS="$(printf '\n\t')"
 	for editopt in "${edit_opts[@]}"
 	do
 		case $editopt in
-			ascii-vowels) asciivowels "$pathname" \
-			              "$parent_pattern" pathname
+			ascii-vowels) asciivowels "$name" "$pattern" name
 			              ;;
-			noblank)      noblank "$pathname" \
-			              "$parent_pattern" pathname
+			noblank)      noblank "$name" "$pattern" name
 			              ;;
-			nocontrol)    nocntrl "$pathname" \
-			              "$parent_pattern" pathname
+			nocontrol)    nocntrl "$name" "$pattern" name
 			              ;;
-			nospecial)    nospecial "$pathname" \
-			              "$parent_pattern" pathname
+			nospecial)    nospecial "$name" "$pattern" name
 			              ;;
 			help)         usage
 			              ;;
-			portable)     portable "$pathname" \
-			              "$parent_pattern" pathname
+			portable)     portable "$name" "$pattern" name
 			              ;;
-			norep)        norep "$pathname" \
-			              "$parent_pattern" pathname
+			norep)        norep "$name" "$pattern" name
 			              ;;
-			trim)         trim "$pathname" \
-			              "$parent_pattern" pathname
+			trim)         trim "$name" "$pattern" name
 			              ;;
 		esac	
 	done
@@ -168,9 +163,9 @@ edit () {
 	# Insert output directory if the --output-to option was invoked.
 	if [ \( -v dirs \) -a \( "$output" \) ]
 	then
-		insert_outdir pathname "$pathname" "$parent_pattern"
+		insert_outdir name "$name" "$pattern"
 	fi
-	local $1 && upvar $1 "$pathname"
+	local $1 && upvar $1 "$name"
 	IFS=$oldifs
 }
 
@@ -178,18 +173,21 @@ edit () {
 #
 #       USAGE: insert_outdir VARNAME PATHNAME PATTERN
 #
-# DESCRIPTION: Build the pathname of PATHNAME's parent directory
-#              according to the argument passed to the --output-to
-#              option of this script. Insert it to PATHNAME and store it
-#              in the caller's VARNAME variable.
+# DESCRIPTION: Get the pathname of PATHNAME's parent directory and
+#              insert it at the beginning of PATHNAME and store the
+#              resulting pathname in the caller's VARNAME variable.
 #
-#   PARAMETER: VARNAME  A caller's variable.
+#   PARAMETER: VARNAME  A variable in caller's scope.
 #              PATHNAME A pathname pointing to a file or directory
 #                       passed as an argument to this script.
+#              PATTERN  A word subject of tilde expansion, parameter
+#                       expansion, command substitution and arithmetic
+#                       substitution. It is used as a pattern to match
+#                       PATHNAME's parent directory.
 #
 insert_outdir () {
 	local aux_name="$2"
-	local parent_pattern="$3"
+	local pattern="$3"
 	local output_dir
 	if ! get_outputdir output_dir "$output" "$file" ${dirs[@]}
 	then
@@ -199,7 +197,7 @@ insert_outdir () {
 	then
 		error_exit "$LINENO: error after call to mkdir."
 	fi
-	aux_name="$output_dir"/"${aux_name#$parent_pattern}"
+	aux_name="$output_dir"/"${aux_name#$pattern}"
 	local $1 && upvar $1 "$aux_name"
 }
 
@@ -215,7 +213,7 @@ insert_outdir () {
 #                       passed as an argument to this script.
 #
 get_dirname () {
-	old_ifs=$IFS
+	local old_ifs=$IFS
 	IFS="$(printf '\n\t')"
 	if [ -d "$1" ]
 	then
@@ -232,12 +230,19 @@ get_dirname () {
 # BEGINNING OF MAIN CODE
 #-----------------------------------------------------------------------
 
-declare progname=$(basename $0) # The name of this script.
+# Variables declaration.
+declare progname # The name of this script.
+
+declare oldifs   # The original content of the environment
+                 # variable IFS.
+
+progname=$(basename $0)
+oldifs=$IFS
 
 # If no argument was passed, print usage message and exit.
 [[ $# -eq 0 ]] && usage && exit
 
-# Some Bash configuration.
+# Bash configuration.
 shopt -s extglob
 LC_ALL=C
 
@@ -257,9 +262,11 @@ declare output        # The argument passed to the --output-to option of
 
 declare recursive     # True if the --recursive option was given.
 
+declare verbose       # True if the --verbose option was given.
+
 while getoptex "ascii-vowels find-tests: ftype: h help noblank \
 	nocontrol norep p portable output-to: r recursive R nospecial \
-	trim" "$@"
+	trim verbose" "$@"
 do
 	case "$OPTOPT" in
 		ascii-vowels) edit_opts+=( ascii-vowels )
@@ -294,6 +301,7 @@ do
 		              ;;
 		trim)         edit_opts+=( trim )
 		              ;;
+		verbose)      verbose=true
 	esac
 done
 shift $(($OPTIND-1))
@@ -317,13 +325,16 @@ done
 unset -v arg
 
 # Process only the pathnames passed as arguments.
+
 declare top_dirs # The list of directories where to find the files and
                  # directories whose pathnames where passed as arguments
 		 # of this script, once these have been changed.
+
+declare file     # The absolute version of a pathname passed as argument
+                 # to this script.
 for arg
 do
 	file="$(readlink -f "$arg")"
-	oldifs=$IFS
 	IFS="$(printf '\n\t')"
 
 	# Skip the file if it does not exist anymore.
@@ -351,22 +362,33 @@ do
 		mv "$file" "$new_name"
 		get_dirname "$new_name"
 	fi
-	IFS=$oldifs
 done
 unset -v arg
 unset -v new_name
 unset -v skip
 unset -v file
-
-# If recursive is not set, exit succesfully
-[[ ! $recursive ]] && exit 0 
-unset -v recursive
+IFS=$oldifs
 
 # Remove redundant entries in the 'top_dirs' array.
 if ! rm_subtrees top_dirs ${top_dirs[@]}
 then
 	error_exit "$LINENO: Error after calling rm_subtrees()."
 fi
+
+# If the --verbose option was given, print the content of the 'top_dirs'
+# array.
+if [[ $verbose == true ]]
+then
+	for dir in ${top_dirs[@]}
+	do
+		echo $dir
+	done
+	unset -v dir
+fi
+
+# If recursive is not set, exit succesfully
+[[ ! $recursive ]] && exit 0 
+unset -v recursive
 
 # Find the new pathname of directories passed as arguments.
 declare -a dirs # The list of processed pathnames corresponding to
@@ -386,6 +408,7 @@ unset -v type_file
 [[ ${#dirs[@]} == 0 ]] && exit 0
 
 # Process recursively every directory passed as argument.
+declare file     # The file beeing edited.
 find ${dirs[@]} -depth ${find_tests[@]} -print0 |
 while IFS="" read -r -d "" file
 do
@@ -412,6 +435,7 @@ do
 		mv "$file" "$new_name"
 	fi
 done
+IFS=$oldifs
 unset -v dirs
 unset -v edit_opts
 unset -v file
@@ -419,4 +443,6 @@ unset -v find_tests
 unset -v ftype
 unset -v output
 unset -v new_name
+unset -v oldifs
+unset -v progname
 unset -v skip
