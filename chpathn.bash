@@ -47,9 +47,6 @@ usage () {
 	                 text
 	--find-tests   Argument required and may be any number of tests
 	               of the find command.
-	--get-topdirs  Argument required and must be a variable name of
-                       array type in the caller's scope. Useful when
-		       called from another script.
 	 -h
 	--help         Display this help.
 	--noblank      Replace blank characters with underscores.
@@ -71,6 +68,7 @@ usage () {
 	--recursive    Do all actions recursively.
 	--trim         Remove leading dashes or blank characters and 
 	               trailing blank characters.
+	--verbose      Print information about what is beeing done.
 	EOF
 }
 
@@ -379,9 +377,11 @@ fi
 # array.
 if [[ $verbose == true ]]
 then
+	printf ' -----------\n Chpathn log:\n -----------\n'
+        printf ' * Top directories:\n'
 	for dir in ${top_dirs[@]}
 	do
-		echo $dir
+		echo "   $dir"
 	done
 	unset -v dir
 fi
