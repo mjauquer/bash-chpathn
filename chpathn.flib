@@ -24,8 +24,8 @@
 source ~/code/bash/chpathn/upvars/upvars.bash
 source ~/code/bash/chpathn/pathname/pathname.flib
 
-#===  FUNCTION =========================================================
-#
+asciivowels () {
+
 #       USAGE: asciivowels PATHNAME PATTERN VARNAME
 #
 # DESCRIPTION: Use the expanded value of PATTERN (the parent_matcher) to
@@ -42,8 +42,7 @@ source ~/code/bash/chpathn/pathname/pathname.flib
 #                        expansion, command substitution and arithmetic
 #                        substitution). 
 #              VARNAME  (A variable name).
-#
-asciivowels () {
+
 	local suffix="${1#$2}"
 	local prefix="${1%/*}/"
 	suffix=${suffix//â/a}
@@ -69,8 +68,8 @@ asciivowels () {
 	local $3 && upvar $3 "$prefix$suffix"
 }
 
-#===  FUNCTION =========================================================
-#
+noblank () {
+
 #       USAGE: noblank PATHNAME PATTERN VARNAME
 #
 # DESCRIPTION: Use the expanded value of PATTERN (the parent_matcher) to
@@ -86,16 +85,15 @@ asciivowels () {
 #                        expansion, command substitution and arithmetic
 #                        substitution). 
 #              VARNAME  (A variable name).
-#
-noblank () {
+
 	local suffix="${1#$2}"
 	local prefix="${1%/*}/"
 	suffix="${suffix//[[:blank:]]/_}"
 	local $3 && upvar $3 "$prefix$suffix"
 }
 
-#===  FUNCTION =========================================================
-#
+nospecial () {
+
 #       USAGE: nospecial PATHNAME PATTERN VARNAME
 #
 # DESCRIPTION: Use the expanded value of PATTERN (the parent_matcher) to
@@ -103,7 +101,7 @@ noblank () {
 #              value of PATHNAME (pathname) to be preserved of further
 #              editing of this function. Replace in the trailing
 #              substring not matched by the parent_matcher (the suffix)
-#              every character with a dash, unless it is a dot, an
+#              every character with a dash, unless it is a plus, dot, an
 #              underscore or an alphanumeric character. Store the
 #              resulting string in the caller's variable VARNAME.
 #
@@ -112,17 +110,16 @@ noblank () {
 #                        expansion, command substitution and arithmetic
 #                        substitution). 
 #              VARNAME  (A variable name).
-#
-nospecial () {
+
 	local suffix="${1#$2}"
 	local prefix="${1%/*}/"
-	suffix="${suffix//[^[:word:].]/-}"
+	suffix="${suffix//[^[:word:].+]/-}"
 	local $3 && upvar $3 "$prefix$suffix"
 	trim "$new_name" "$2" "new_name"
 }
 
-#===  FUNCTION =========================================================
-#
+nocntrl () {
+
 #       USAGE: nocntrl PATHNAME PATTERN VARNAME
 #
 # DESCRIPTION: Use the expanded value of PATTERN (the parent_matcher) to
@@ -138,16 +135,15 @@ nospecial () {
 #                        expansion, command substitution and arithmetic
 #                        substitution). 
 #              VARNAME  (A variable name).
-#
-nocntrl () {
+
 	local suffix="${1#$2}"
 	local prefix="${1%/*}/"
 	suffix="${suffix//[[:cntrl:]]}"
 	local $3 && upvar $3 "$prefix$suffix"
 }
 
-#===  FUNCTION =========================================================
-#
+norep () {
+
 #       USAGE: norep PATHNAME PATTERN VARNAME
 #
 # DESCRIPTION: Use the expanded value of PATTERN (the parent_matcher) to
@@ -164,8 +160,7 @@ nocntrl () {
 #                        expansion, command substitution and arithmetic
 #                        substitution). 
 #              VARNAME  (A variable name).
-#
-norep () {
+
 	local suffix="${1#$2}"
 	local prefix="${1%/*}/"
 	suffix="$(echo $suffix | tr -s [-_])"
@@ -174,8 +169,8 @@ norep () {
 
 }
 
-#===  FUNCTION =========================================================
-#
+portable () {
+
 #       USAGE: portable PATHNAME PATTERN VARNAME
 #
 # DESCRIPTION: Equivalent to:
@@ -194,8 +189,7 @@ norep () {
 #                        expansion, command substitution and arithmetic
 #                        substitution). 
 #              VARNAME  (A variable name).
-#
-portable () {
+
 	local suffix="${1#$2}"
 	local prefix="${1%/*}/"
 	suffix="${suffix//[[:cntrl:]]}"
@@ -222,15 +216,15 @@ portable () {
 	suffix=${suffix//ù/u}
 	suffix=${suffix//ú/u}
 	suffix=${suffix//ü/u}
-	suffix="${suffix//[^[:word:].]/-}"
+	suffix="${suffix//[^[:word:].+]/-}"
 	suffix="$(echo $suffix | tr -s [-_])"
 	suffix="${suffix##+([-[[:space:]])}"
 	suffix="${suffix%%+([[:space:]])}"
 	local $3 && upvar $3 "$prefix$suffix"
 }
 
-#===  FUNCTION =========================================================
-#
+trim () {
+
 #       USAGE: trim PATHNAME PATTERN VARNAME
 #
 # DESCRIPTION: Use the expanded value of PATTERN (the parent_matcher) to
@@ -248,8 +242,7 @@ portable () {
 #                        expansion, command substitution and arithmetic
 #                        substitution). 
 #              VARNAME  (A variable name).
-#
-trim () {
+
 	local suffix="${1#$2}"
 	local prefix="${1%/*}/"
 	suffix="${suffix##+([-[[:space:]])}"
@@ -257,8 +250,8 @@ trim () {
 	local $3 && upvar $3 "$prefix$suffix"
 }
 
-#===  FUNCTION =========================================================
-#
+get_outputdir () {
+
 #       USAGE: get_outputdir VARNAME STRING PATHNAME PATH...
 #
 # DESCRIPTION: If STRING has the format of a unix filesystem absolute
@@ -277,8 +270,7 @@ trim () {
 #              PATHNAME (A string representing a unix pathname).
 #              PATH...  (A listing of unix filesystem formated
 #                        pathnames).
-#
-get_outputdir () {
+
 	{
 	[[ "$#" -lt 4 ]] && cat <<- EOF
 	Error: function get_outputdir requires at least four arguments.
@@ -301,8 +293,8 @@ get_outputdir () {
 	local $output_dir && upvar $output_dir "$output"
 }
 
-#===  FUNCTION =========================================================
-#
+get_parentmatcher () {
+
 #       USAGE: get_parentmatcher VARNAME PATHNAME
 #
 # DESCRIPTION: Consider PATHNAME as a string representing a unix
@@ -314,8 +306,7 @@ get_outputdir () {
 #  PARAMETERS: VARNAME  A string representing a variable name inside the
 #                       caller's scope.
 #              PATHNAME A string representing a unix pathname.
-#
-get_parentmatcher () {
+
 	{
 	[[ "$#" -ne 2 ]] && cat <<- EOF
 	Error: function get_parentmatcher requires two arguments.
@@ -348,8 +339,8 @@ get_parentmatcher () {
 	fi
 }
 
-#===  FUNCTION =========================================================
-#
+read_topdirs () {
+
 #       USAGE: read_topdirs VARNAME LOG
 #
 # DESCRIPTION: Read the LOG and make a list of the directories where to
@@ -361,8 +352,7 @@ get_parentmatcher () {
 #                       caller's scope.
 #              LOG      The output of the command chpathn --verbose in
 #                       the form of multiple words.
-#
-read_topdirs () {
+
 	local -a log=( ${@:2} )
 	local -a dirs
 	local copy=false
