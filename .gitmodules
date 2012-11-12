@@ -7,6 +7,6 @@
 [submodule "filetype"]
 	path = filetype
 	url = git@github.com:mjauquer/bash-filetype.git
-[submodule "pathname"]
-	path = pathname
+[submodule "bash-pathname"]
+	path = bash-pathname
 	url = git@github.com:mjauquer/bash-pathname.git
