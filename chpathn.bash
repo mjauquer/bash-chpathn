@@ -29,13 +29,12 @@ source ~/code/bash/chpathn/chpathn.flib
 source ~/code/bash/chpathn/getoptx/getoptx.bash
 source ~/code/bash/chpathn/filetype/filetype.flib
 
-#===  FUNCTION =========================================================
-#
+usage () {
+
 #       USAGE: usage
 #
 # DESCRIPTION: Print a help message to stdout.
-#
-usage () {
+
 	cat <<- EOF
 	Usage: chpathn.sh [OPTIONS] PATH...
 	
@@ -72,21 +71,20 @@ usage () {
 	EOF
 }
 
-#===  FUNCTION =========================================================
-#
+error_exit () {
+
 #       USAGE: error_exit [MESSAGE]
 #
 # DESCRIPTION: Function for exit due to fatal program error.
 #
 #   PARAMETER: MESSAGE An optional description of the error.
-#
-error_exit () {
+
 	echo "${progname}: ${1:-"Unknown Error"}" 1>&2
 	exit 1
 }
 
-#===  FUNCTION =========================================================
-#
+must_be_skipped () {
+
 #       USAGE: must_be_skipped VARNAME PATHNAME
 #
 # DESCRIPTION: Check if PATHNAME must be skipped acording to the options
@@ -96,8 +94,7 @@ error_exit () {
 #   PARAMETER: VARNAME  A variable in caller's scope.
 #              PATHNAME A pathname pointing to a file or directory
 #                       passed as an argument to this script.
-#
-must_be_skipped () {
+
 	local old_ifs=$IFS
 	IFS="$(printf '\n\t')"
 	local answer # The answer to be returned.
@@ -119,8 +116,8 @@ must_be_skipped () {
 	IFS=$old_ifs
 }
 
-#===  FUNCTION =========================================================
-#
+edit () {
+
 #       USAGE: edit VARNAME PATHNAME
 #
 # DESCRIPTION: Call editing functions on PATHNAME. Store the resulting
@@ -129,8 +126,7 @@ must_be_skipped () {
 #   PARAMETER: VARNAME  A caller's variable.
 #              PATHNAME A pathname pointing to a file or directory
 #                       passed as an argument to this script.
-#
-edit () {
+
 	local old_ifs=$IFS
 	local name="$2"
 	local pattern
@@ -167,8 +163,8 @@ edit () {
 	IFS=$oldifs
 }
 
-#===  FUNCTION =========================================================
-#
+insert_outdir () {
+
 #       USAGE: insert_outdir VARNAME PATHNAME PATTERN
 #
 # DESCRIPTION: Get the pathname of PATHNAME's parent directory and
@@ -182,8 +178,7 @@ edit () {
 #                       expansion, command substitution and arithmetic
 #                       substitution. It is used as a pattern to match
 #                       PATHNAME's parent directory.
-#
-insert_outdir () {
+
 	local aux_name="$2"
 	local pattern="$3"
 	local output_dir
@@ -199,8 +194,8 @@ insert_outdir () {
 	local $1 && upvar $1 "$aux_name"
 }
 
-#===  FUNCTION =========================================================
-#
+get_dirname () {
+
 #       USAGE: get_dirname PATHNAME
 #
 # DESCRIPTION: If pathname is a directory, add it to the 'top_dirs'
@@ -209,8 +204,7 @@ insert_outdir () {
 #
 #   PARAMETER: PATHNAME A pathname pointing to a file or directory
 #                       passed as an argument to this script.
-#
-get_dirname () {
+
 	local old_ifs=$IFS
 	IFS="$(printf '\n\t')"
 	if [ -d "$1" ]
@@ -381,7 +375,7 @@ then
         printf ' * Top directories:\n'
 	for dir in ${top_dirs[@]}
 	do
-		echo "   $dir"
+		echo "$dir"
 	done
 	unset -v dir
 fi

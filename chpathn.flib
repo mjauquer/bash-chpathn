@@ -358,8 +358,7 @@ read_topdirs () {
 	local copy=false
 	for (( i=0; i<${#log[@]}; i++))
 	do
-		[[ ${log[i-2]} == Top ]] &&
-		[[ ${log[i-1]} == directories: ]] &&
+		[[ ${log[i-1]} == " * Top directories:" ]] &&
 		copy=true
 		[[ $copy == true ]] && dirs+=( ${log[i]} )
 	done
