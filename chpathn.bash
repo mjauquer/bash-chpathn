@@ -218,6 +218,42 @@ get_dirname () {
 	IFS=$old_ifs
 }
 
+recursive () {
+	for dir in "$1"
+	do
+		find $dir -mindepth 1 -maxdepth 1 ${find_tests[@]} -print0 |
+		while IFS="" read -r -d "" file
+		do
+			IFS="$(printf '\n\t')"
+
+			# Apply filters.
+			if ! must_be_skipped skip "$file"
+			then
+				error_exit "$LINENO: error after calling must_be_skipped()."
+			fi
+			[[ $skip == true ]] && continue
+
+			# Edit pathname.
+			edit new_name "$file"	
+
+			# Rename file. Handle name conflicts.
+			if [ "$file" == "$new_name" ]
+			then
+				continue
+			elif [ -e "$new_name" ]
+			then
+				error_exit "$LINENO: File $new_name already exists"
+			else
+				mv "$file" "$new_name"
+			fi
+
+			# If file is a directory, process it
+			# recursively.
+			[ -d "$new_name" ] && recursive "$new_name"
+		done
+	done
+}
+
 #-----------------------------------------------------------------------
 # BEGINNING OF MAIN CODE
 #-----------------------------------------------------------------------
@@ -402,33 +438,11 @@ unset -v type_file
 [[ ${#dirs[@]} == 0 ]] && exit 0
 
 # Process recursively every directory passed as argument.
-declare file     # The file beeing edited.
-find ${dirs[@]} -depth ${find_tests[@]} -print0 |
-while IFS="" read -r -d "" file
+for dir in ${dirs[@]}
 do
-	IFS="$(printf '\n\t')"
-
-	# Apply filters.
-	if ! must_be_skipped skip "$file"
-	then
-		error_exit "$LINENO: error after calling must_be_skipped()."
-	fi
-	[[ $skip == true ]] && continue
-
-	# Edit pathname.
-	edit new_name "$file"	
-
-	# Rename file. Handle name conflicts.
-	if [ "$file" == "$new_name" ]
-	then
-		continue
-	elif [ -e "$new_name" ]
-	then
-		error_exit "$LINENO: File $new_name already exists"
-	else
-		mv "$file" "$new_name"
-	fi
+	recursive $dir
 done
+
 IFS=$oldifs
 unset -v dirs
 unset -v edit_opts
