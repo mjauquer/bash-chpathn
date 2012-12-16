@@ -397,6 +397,10 @@ unset -v skip
 unset -v file
 IFS=$oldifs
 
+# If recursive is not set, exit succesfully
+[[ ! $recursive ]] && exit 0 
+unset -v recursive
+
 # Remove redundant entries in the 'top_dirs' array.
 if ! rm_subtrees top_dirs ${top_dirs[@]}
 then
@@ -415,10 +419,6 @@ then
 	done
 	unset -v dir
 fi
-
-# If recursive is not set, exit succesfully
-[[ ! $recursive ]] && exit 0 
-unset -v recursive
 
 # Find the new pathname of directories passed as arguments.
 declare -a dirs # The list of processed pathnames corresponding to
