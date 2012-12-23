@@ -17,4 +17,6 @@ if [ $? -eq 0 ]; then
 	mkdir "./middle space"
 	touch "./middle space/middle space Fil"
 	touch "âàáäêèéëîìíïôòóöûùúü"
+	mkdir "./middle space/middle space2/"
+	touch "./middle space/middle space2/middle space2 Fil"
 fi

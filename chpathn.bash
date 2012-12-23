@@ -237,13 +237,11 @@ recursive () {
 			edit new_name "$file"	
 
 			# Rename file. Handle name conflicts.
-			if [ "$file" == "$new_name" ]
-			then
-				continue
-			elif [ -e "$new_name" ]
+			if [ "$file" != "$new_name" ] && [ -e "$new_name" ]
 			then
 				error_exit "$LINENO: File $new_name already exists"
-			else
+			elif [ "$file" != "$new_name" ]
+			then
 				mv "$file" "$new_name"
 			fi
 
@@ -453,4 +451,3 @@ unset -v output
 unset -v new_name
 unset -v oldifs
 unset -v progname
-unset -v skip
