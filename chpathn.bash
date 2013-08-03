@@ -48,6 +48,7 @@ usage () {
 	               of the find command.
 	 -h
 	--help         Display this help.
+	--noampersand  Replace ampersand characters with the word 'and'.
 	--noblank      Replace blank characters with underscores.
 	--nocontrol    Remove control characters.
 	--norep        Replace every sequence of more than one dash (or 
@@ -60,8 +61,9 @@ usage () {
 	               a slash), consider it relative to the target's
 	               ancestor directory specified in PATH...
 	 -p
-	--portable     Equivalent to --nocontrol --trim --noblank
-	               --ascii-vowels --nospecial --norep --trim
+	--portable     Equivalent to --nocontrol --trim --noampersand
+	               --noblank --ascii-vowels --nospecial --norep
+		       --trim
 	 -r
 	 -R
 	--recursive    Do all actions recursively.
@@ -136,6 +138,8 @@ edit () {
 	do
 		case $editopt in
 			ascii-vowels) asciivowels "$name" "$pattern" name
+			              ;;
+			noampersand)  noampersand "$name" "$pattern" name
 			              ;;
 			noblank)      noblank "$name" "$pattern" name
 			              ;;
@@ -290,7 +294,7 @@ declare recursive     # True if the --recursive option was given.
 
 declare verbose       # True if the --verbose option was given.
 
-while getoptex "ascii-vowels find-tests: ftype: h help noblank \
+while getoptex "ascii-vowels find-tests: ftype: h help noampersand noblank \
 	nocontrol norep p portable output-to: r recursive R nospecial \
 	trim verbose" "$@"
 do
@@ -300,6 +304,8 @@ do
 		find-tests)   find_tests+=( $OPTARG )
 			      ;;
 		ftype)        ftype=$OPTARG
+		              ;;
+		noampersand)  edit_opts+=( noampersand )
 		              ;;
 		noblank)      edit_opts+=( noblank )
 		              ;;

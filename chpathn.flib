@@ -68,6 +68,30 @@ asciivowels () {
 	local $3 && upvar $3 "$prefix$suffix"
 }
 
+noampersand () {
+
+#       USAGE: noampersand PATHNAME PATTERN VARNAME
+#
+# DESCRIPTION: Use the expanded value of PATTERN (the parent_matcher) to
+#              match a beggining substring (a prefix) of the expanded
+#              value of PATHNAME (pathname) to be preserved of further
+#              editing of this function. Replace in the trailing
+#              substring not matched by the parent_matcher (the suffix)
+#              every ampersand character with the word 'and'. Store the
+#              resulting string in the caller's variable VARNAME.
+#
+#  PARAMETERS: PATHNAME (A string).
+#              PATTERN  (A word subject of tilde expansion, parameter
+#                        expansion, command substitution and arithmetic
+#                        substitution). 
+#              VARNAME  (A variable name).
+
+	local suffix="${1#$2}"
+	local prefix="${1%/*}/"
+	suffix="${suffix//[&]/and}"
+	local $3 && upvar $3 "$prefix$suffix"
+}
+
 noblank () {
 
 #       USAGE: noblank PATHNAME PATTERN VARNAME
@@ -195,6 +219,7 @@ portable () {
 	suffix="${suffix//[[:cntrl:]]}"
 	suffix="${suffix##+([-[[:space:]])}"
 	suffix="${suffix%%+([[:space:]])}"
+	suffix="${suffix//[&]/and}"
 	suffix="${suffix//[[:blank:]]/_}"
 	suffix=${suffix//â/a}
 	suffix=${suffix//à/a}
